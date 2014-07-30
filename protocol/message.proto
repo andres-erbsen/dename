@@ -1,0 +1,83 @@
+package protocol;
+
+message Profile {
+	message PublicKey {
+		optional bytes ed25519 = 1;
+	}
+	required PublicKey SignatureKey = 1;
+	required uint64 ExpirationTime = 2;
+	optional uint64 Version = 3 [default = 0];
+	extensions 4 to max;
+}
+
+message SignedProfileOperation {
+	message ProfileOperationT {
+		required bytes Name = 1;
+		required bytes NewProfile = 2;
+	}
+	required bytes ProfileOperation = 1;
+	required bytes NewProfileSignature = 2;
+	optional bytes OldProfileSignature = 3; // required if old profile exists
+}
+
+
+message SignedServerMessage {
+	message ServerMessage {
+		optional bytes HashOfOperations = 1;
+		optional bytes HashOfHashes = 2;
+		message OperationsT { // 
+			required bytes Seed = 1;
+			required uint64 time = 2;
+			repeated SignedProfileOperation ProfileOperations = 3;
+		}
+		optional bytes Operations = 3;
+		optional bytes HashOfState = 4;
+
+		required uint64 round = 10;
+		required uint64 server = 11;
+		required uint64 time = 12;
+	}
+	required bytes Message = 1;
+	required bytes Signature = 2;
+}
+
+message BackendMessage {
+	optional SignedServerMessage SignedServerMessage = 1;
+	message MessageID {
+		required uint64 round = 1;
+		repeated uint64 phase = 2 [packed=true]; // nil = wildcard
+		repeated uint64 server = 3 [packed=true]; // nil = wildcard
+	}
+	optional MessageID Download = 2;
+	optional bool Subscribe = 3 [default=false];
+}
+
+message ClientMessage {
+	optional bool PeekState = 1;
+	optional bytes ResolveName = 2;
+	optional SignedProfileOperation ModifyProfile = 3;
+	optional bytes InviteCode = 4; // required to create a new profile (a soft anti-spam measure)
+
+	optional uint64 PadReplyTo = 11;
+}
+
+message ClientReply {
+	message MerklemapNode {
+		required uint64 SubstringBitsInLastByte = 1; // 1 byte, [1..8]
+		required bytes Substring = 2; // up to 32 bytes (0-pad for hashing)
+		// exactly one of {LeftChildHash, RightChildHash, Value} must be present in a message on wire, all are used for hashing
+		optional bytes LeftChildHash = 3; // 32 bytes
+		optional bytes RightChildHash = 4; // 32 bytes
+		optional bytes Value = 5; // all remaining bytes
+	}
+	repeated SignedServerMessage StateConfirmations = 1;
+	repeated MerklemapNode LookupNodes = 2;
+	enum Status {
+		OK = 0;
+		REGISTRATION_DISABLED = 1;
+		INVITE_INVALID = 2;
+		INVITE_USED	 = 3;
+		NOT_AUTHORIZED = 4;
+	}
+	optional Status status = 3 [default = OK];
+}

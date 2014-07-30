@@ -1,0 +1,21 @@
+#!/bin/bash
+# DEPENDENCIES: go get github.com/andres-erbsen/dename/{dnmgr/dnmgr,dnmlookup}
+# USAGE: dngpg <recipient-name> [gpg-args...]
+# To publish a key: dnmgr set <name> pgp $(gpg --fingerprint -K $KEYID | grep -im1 fingerprint\ = | tr -dc A-F0-9)
+
+
+keyid=$(dnmlookup "$1" gpg)
+if [ -z "$keyid" ]; then
+	echo "No gpg key found" >&2
+	exit 1
+fi
+
+tmp="$(mktemp).$1.gpg"
+function cleanup {
+  rm "$tmp"
+}
+trap cleanup EXIT
+
+gpg --list-keys "$keyid" >/dev/null || gpg --recv-keys "$keyid"
+gpg --export "$keyid" > "$tmp"
+gpg --no-default-keyring --always-trust --keyring "/tmp/$1.gpg" --recipient "$keyid" ${*:2}
