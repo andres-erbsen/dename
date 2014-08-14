@@ -22,19 +22,19 @@ import (
 
 const hASH_BYTES = 32
 
-// VerifyResolveAgainstRoot decodes a profile from a resolve structure
-// and verifies that it is indeed a part of a mrklemap with rootHash.
-// resolve contains nodes of a crit-bit tree, where each pointer has
-// been replaced with a cryptographic hash of its target.  As crit-bit
-// tree lookup only uses nodes on one branch of the tree, all other nodes
-// are omitted. Furthermore, hashes of nodes that /are/ present are
-// implicit: if a node's child is nil, we can find its hash by hashing the
-// next node in the array. This function assumes that the hash of the root
-// has been authenticated externally and verifies that 1) all provided
-// nodes indeed lie in their implicitly claimed positions by recomputing
-// the hash of the root from the provided nodes and 2) that the chain of
-// nodes we received unambiguously determines the result of the lookup we
-// requrested by running the crit-bit tree lookup algorithm on these nodes.
+// VerifyResolveAgainstRoot decodes a profile from a resolve structure and
+// verifies that it is indeed a part of a mrklemap with rootHash.  resolve
+// contains nodes of a binary trie, except that each pointer has been replaced
+// with a cryptographic hash of its target. As a binary trie lookup only uses
+// nodes on one branch of the tree, all other nodes are omitted. Furthermore,
+// hashes of nodes that /are/ present are implicit: if a node's child hash is
+// nil, we can find it by hashing the next given node. This function assumes
+// that the hash of the root has been authenticated externally and verifies that
+// 1) all provided nodes indeed lie in their claimed positions in the trie by
+// recomputing the hash of the root from the provided nodes and 2) that the
+// parts of the trie contained in resolve unambiguously determine the result of
+// the lookup of name by running the binary trie tree lookup algorithm on these
+// nodes.
 func VerifyResolveAgainstRoot(rootHash, name []byte, resolve []*ClientReply_MerklemapNode, testing ...interface{}) (
 	profile []byte, err error) {
 	if !bytes.Equal(reproduceRootHash(resolve), rootHash) {
@@ -46,12 +46,9 @@ func VerifyResolveAgainstRoot(rootHash, name []byte, resolve []*ClientReply_Merk
 	}
 	var requiredPath [hASH_BYTES * 8]bool
 	for i := range requiredPath {
-		requiredPath[i] = nameHash[i/8]&(1<<(7-uint(i%8))) != 0
+		requiredPath[i] = nameHash[i/8]&(0x80>>uint(i%8)) != 0
 	}
-	if match, err := compareCritBitPath(resolve, requiredPath[:]); !match {
-		return nil, err
-	}
-	return resolve[len(resolve)-1].Value, nil
+	return reproduceBinaryTrieLookup(resolve, requiredPath[:])
 }
 
 func reproduceRootHash(resolve []*ClientReply_MerklemapNode) []byte {
@@ -76,39 +73,42 @@ func reproduceRootHash(resolve []*ClientReply_MerklemapNode) []byte {
 	return curHash[:]
 }
 
-func compareCritBitPath(resolve []*ClientReply_MerklemapNode, remainingPath []bool) (bool, error) {
+func reproduceBinaryTrieLookup(resolve []*ClientReply_MerklemapNode, remainingPath []bool) ([]byte, error) {
 	for _, node := range resolve {
-		for j := 0; j < len(node.Substring)*8-8+int(*node.SubstringBitsInLastByte); j++ {
-			observedBit := (node.Substring[j/8]<<uint(j%8))&(1<<7) != 0
+		if *node.SubstringBitsInLastByte > 8 {
+			return nil, fmt.Errorf("invalid node: bitsInLastByte: %d", *node.SubstringBitsInLastByte)
+		}
+		for i := 0; i < len(node.Substring)*8-8+int(*node.SubstringBitsInLastByte); i++ {
 			if len(remainingPath) == 0 {
-				return false, fmt.Errorf("merklemap path too long")
+				return nil, fmt.Errorf("merklemap path too long")
 			}
 			var requiredBit bool
 			requiredBit, remainingPath = remainingPath[0], remainingPath[1:]
+			observedBit := node.Substring[i/8]&(0x80>>uint(i%8)) != 0
 			if observedBit != requiredBit {
-				return false, nil // this path is not present in the merklemap
+				return nil, nil // the required path is not present in the merklemap
 			}
 		}
 		if node.Value == nil {
 			if node.LeftChildHash != nil && node.RightChildHash != nil {
-				return false, fmt.Errorf("merklemap node with both children given")
+				return nil, fmt.Errorf("merklemap node with both children given")
 			}
 			if node.LeftChildHash == nil && node.RightChildHash == nil {
-				return false, fmt.Errorf("merklemap node with no children given")
+				return nil, fmt.Errorf("merklemap node with no children given")
 			}
 			descendingRight := node.RightChildHash == nil
 			if descendingRight != remainingPath[0] {
-				return false, fmt.Errorf("merklemap wrong branch taken")
+				return nil, fmt.Errorf("merklemap wrong branch taken")
 			}
 			remainingPath = remainingPath[1:]
 		} else {
 			if len(remainingPath) > 0 {
-				return false, fmt.Errorf("merklemap truncated hash chain")
+				return nil, fmt.Errorf("merklemap: value too high in the tree")
 			}
-			return true, nil
+			return node.Value, nil
 		}
 	}
-	return false, fmt.Errorf("merklemap too long hash chain")
+	return nil, fmt.Errorf("merklemap: no value or contradiction given")
 }
 
 func hashWireNode(wireNode *ClientReply_MerklemapNode, substituteLeftHash,
