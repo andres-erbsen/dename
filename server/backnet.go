@@ -15,9 +15,9 @@ package main
 
 import (
 	"bufio"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io"
 	"log"
 	"net"

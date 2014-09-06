@@ -20,8 +20,8 @@ import (
 	"crypto/sha256"
 	_ "crypto/sha512" // for TLS
 	"crypto/tls"
-	. "github.com/andres-erbsen/dename/protocol"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/syndtr/goleveldb/leveldb"
 	"io"
 	"log"

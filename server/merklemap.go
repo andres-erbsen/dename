@@ -15,9 +15,9 @@ package main
 
 import (
 	"crypto/sha256"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/syndtr/goleveldb/leveldb"
 	leveldbopt "github.com/syndtr/goleveldb/leveldb/opt"
 )

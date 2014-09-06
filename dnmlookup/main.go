@@ -14,9 +14,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/andres-erbsen/dename/client"
 	"github.com/andres-erbsen/dename/protocol"
-	"fmt"
 	"os"
 )
 

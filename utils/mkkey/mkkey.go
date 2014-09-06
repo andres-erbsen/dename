@@ -15,8 +15,8 @@ package main
 
 import (
 	"crypto/rand"
-	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
 	"os"
 )
 

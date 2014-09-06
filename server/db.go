@@ -14,8 +14,8 @@
 package main
 
 import (
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
+	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )

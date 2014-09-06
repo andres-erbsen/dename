@@ -16,9 +16,9 @@ package client
 import (
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/rand"
-	. "github.com/andres-erbsen/dename/protocol"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io"
 	"time"
 )

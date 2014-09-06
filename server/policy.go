@@ -15,8 +15,8 @@ package main
 
 import (
 	"code.google.com/p/goprotobuf/proto"
-	. "github.com/andres-erbsen/dename/protocol"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
 )
 
 type errWontExpire error

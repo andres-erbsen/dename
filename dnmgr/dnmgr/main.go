@@ -14,10 +14,10 @@
 package main
 
 import (
-	"github.com/andres-erbsen/dename/client"
-	"github.com/andres-erbsen/dename/dnmgr"
 	"encoding/base64"
 	"fmt"
+	"github.com/andres-erbsen/dename/client"
+	"github.com/andres-erbsen/dename/dnmgr"
 	"os"
 )
 

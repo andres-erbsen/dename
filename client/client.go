@@ -19,10 +19,10 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	_ "crypto/sha512" // for tls
 	"crypto/tls"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io"
 	"net"
 	"time"
