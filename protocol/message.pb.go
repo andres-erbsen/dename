@@ -16,6 +16,7 @@ It has these top-level messages:
 	ClientMessage
 	ClientReply
 */
+
 package protocol
 
 import proto "code.google.com/p/goprotobuf/proto"
