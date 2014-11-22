@@ -111,6 +111,10 @@ func StartFromConfigFile(path string) *server {
 	if err := gcfg.ReadFileInto(cfg, path); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	return StartFromConfig(cfg)
+}
+
+func StartFromConfig(cfg *ServerConfig) *server {
 	backnet, server, err := serverFromConfig(cfg)
 	if err != nil {
 		log.Fatalf("Startup failed: %v", err)
