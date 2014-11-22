@@ -12,20 +12,20 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"bytes"
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/sha256"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/syndtr/goleveldb/leveldb"
 	"log"
-	"os"
 	"math/rand"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -98,6 +98,12 @@ func (server *server) loadState() (err error) {
 		server.state.confirmations = append(server.state.confirmations, msg)
 	}
 	return nil
+}
+
+func (server *server) Shutdown() (err error) {
+	close(server.stop)
+	server.waitStop.Wait()
+	return server.db.Close()
 }
 
 func (server *server) Publish(wb *leveldb.Batch, msg *Message) {

@@ -12,20 +12,19 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"code.google.com/p/gcfg"
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/base64"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 )
 
 type ServerConfig struct {
@@ -107,7 +106,7 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 	return bn, server, err
 }
 
-func startFromConfigFile(path string) *server {
+func StartFromConfigFile(path string) *server {
 	cfg := new(ServerConfig)
 	if err := gcfg.ReadFileInto(cfg, path); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -131,9 +130,4 @@ func startFromConfigFile(path string) *server {
 		go server.frontend.listenForClients(cfg.Frontend.Listen, cert)
 	}
 	return server
-}
-
-func main() {
-	startFromConfigFile(os.Args[1])
-	select {}
 }

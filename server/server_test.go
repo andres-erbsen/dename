@@ -12,18 +12,18 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"bytes"
-	"crypto/rand"
-	. "github.com/andres-erbsen/dename/client"
-	. "github.com/andres-erbsen/dename/protocol"
 	"code.google.com/p/goprotobuf/proto"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/client"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io/ioutil"
 	mathrand "math/rand"
 	"net"
@@ -162,11 +162,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 			nets[id].shutdown()
 		}
 		for _, s := range servers {
-			close(s.stop)
-		}
-		for _, s := range servers {
-			s.waitStop.Wait()
-			s.db.Close()
+			s.Shutdown()
 		}
 		os.RemoveAll(dir)
 	}
@@ -322,13 +318,12 @@ func startWithConfigAndBacknet(t *testing.T, numCoreServers, numVerifiers, numSu
 	dirs, cfg, teardown := createConfigs(t, numCoreServers, numVerifiers, numSubscribers)
 	servers := make([]*server, 0, numCoreServers+numVerifiers+numSubscribers)
 	for _, dir := range dirs {
-		s := startFromConfigFile(filepath.Join(dir, "denameserver.cfg"))
+		s := StartFromConfigFile(filepath.Join(dir, "denameserver.cfg"))
 		servers = append(servers, s)
 	}
 	return servers, dirs, cfg, func() {
 		for _, s := range servers {
-			close(s.stop)
-			s.waitStop.Wait()
+			s.Shutdown()
 		}
 		teardown()
 	}
@@ -349,11 +344,9 @@ func TestServerRestartSingle(t *testing.T) {
 	dirs, cfg, teardown := createConfigs(t, 1, 0, 0)
 	defer teardown()
 	for i := 0; i < 3; i++ {
-		server := startFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
+		server := StartFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
 		roundTrip(t, cfg, server, "alice "+fmt.Sprint(i))
-		close(server.stop)
-		server.waitStop.Wait()
-		server.db.Close()
+		server.Shutdown()
 		if testing.Verbose() {
 			fmt.Println("RESTARTING")
 		}
@@ -363,26 +356,19 @@ func TestServerRestartSingle(t *testing.T) {
 func TestServerRestartOneOfTwo(t *testing.T) {
 	dirs, cfg, teardown := createConfigs(t, 2, 0, 0)
 	defer teardown()
-	constantServer := startFromConfigFile(filepath.Join(dirs[1], "denameserver.cfg"))
-	server := startFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
+	constantServer := StartFromConfigFile(filepath.Join(dirs[1], "denameserver.cfg"))
+	server := StartFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
 	roundTrip(t, cfg, constantServer, "bob")
 	for i := 0; i < 3; i++ {
-		close(server.stop)
-		server.waitStop.Wait()
-		server.db.Close()
+		server.Shutdown()
 		if testing.Verbose() {
 			fmt.Println("RESTARTING")
 		}
-		server = startFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
+		server = StartFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
 		roundTrip(t, cfg, server, "alice "+fmt.Sprint(i))
 	}
-	close(constantServer.stop)
-	constantServer.waitStop.Wait()
-	constantServer.db.Close()
-
-	close(server.stop)
-	server.waitStop.Wait()
-	server.db.Close()
+	constantServer.Shutdown()
+	server.Shutdown()
 }
 
 func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]byte) {
