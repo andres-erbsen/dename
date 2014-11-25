@@ -12,7 +12,6 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-
 package client
 
 import (
@@ -20,8 +19,8 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
 	"crypto/x509"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/base64"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -86,6 +85,7 @@ func NewClient(cfg *Config, dialer proxy.Dialer, tlsConfig *tls.Config) (c *Clie
 			}
 			serverTLSConfig.RootCAs = x509.NewCertPool()
 			serverTLSConfig.RootCAs.AppendCertsFromPEM(certPEM)
+			// TODO: allow certificates with the CA bit not set
 		}
 		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, tlsConfig: &serverTLSConfig}
 	}

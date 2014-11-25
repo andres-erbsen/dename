@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"code.google.com/p/goprotobuf/proto"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/client"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/andres-erbsen/dename/server/testutil"
 	"io/ioutil"
 	mathrand "math/rand"
 	"net"
@@ -34,6 +36,18 @@ import (
 	"testing"
 	"time"
 )
+
+var testing_tls_config *tls.Config
+var testing_ca *testutil.TestingCA
+
+func init() {
+	var err error
+	testing_ca, err = testutil.NewTestingCA(nil)
+	if err != nil {
+		panic(err)
+	}
+	testing_tls_config = testing_ca.Config
+}
 
 type testNet struct {
 	servers    map[uint64]*server
@@ -138,7 +152,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 		for _, id := range serverIDs {
 			comm.servers[id] = &ServerInfo{ID: id, Profile_PublicKey: pks[id], IsCore: true, messageBroker: &MessageBroker{serverID: id, servernet: net}}
 		}
-		fe := NewFrontend(INVITE_KEY)
+		fe := NewFrontend(testutil.INVITE_KEY)
 		server, err := OpenServer(filepath.Join(dir, fmt.Sprintf("%x", id), "db"), sks[id], comm, fe)
 		if err != nil {
 			panic(err)
@@ -188,7 +202,7 @@ func roundTrip(t *testing.T, cfg *Config, server *server, nameStr string) {
 	}
 	rqReply := server.frontend.handleRequest(&ClientMessage{
 		ModifyProfile: NewSign(sk, MakeOperation(name, profile)),
-		InviteCode:    mktoken(),
+		InviteCode:    testutil.MakeToken(),
 	})
 	rootReply := server.frontend.handleRequest(&ClientMessage{PeekState: &true_})
 	resolveReply := server.frontend.handleRequest(&ClientMessage{ResolveName: name})
@@ -244,78 +258,8 @@ func TestServerUnreliableNetwork(t *testing.T) {
 	roundTrip(t, cfg, servers[1], "John Smith")
 }
 
-func createConfigs(t *testing.T, numCoreServers, numVerifiers, numSubscribers uint) (dirs []string, clientConfig *Config, teardown func()) {
-	n := numCoreServers + numVerifiers + numSubscribers
-	dir, err := ioutil.TempDir("", "servertest")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ids := make([]uint64, n)
-	pks := make(map[uint64]*Profile_PublicKey, n)
-	dirMap := make(map[uint64]string, n)
-	dirs = make([]string, 0, n)
-	configs := make(map[uint64]string, n)
-	for i := uint(0); i < n; i++ {
-		pkEd, sk, err := ed25519.GenerateKey(rand.Reader)
-		if err != nil {
-			panic(err)
-		}
-		pk := &Profile_PublicKey{Ed25519: pkEd[:]}
-		id := pk.ID()
-		ids[i] = id
-		pks[id] = pk
-		dir := filepath.Join(dir, fmt.Sprintf("%x", id))
-		dirs = append(dirs, dir)
-		dirMap[id] = dir
-		err = os.Mkdir(dir, os.FileMode(0700))
-		if err != nil {
-			t.Fatal(err)
-		}
-		ioutil.WriteFile(filepath.Join(dirMap[id], "sk"), sk[:], os.FileMode(0600))
-		ioutil.WriteFile(filepath.Join(dirMap[id], "invitekey"), INVITE_KEY, os.FileMode(0600))
-		tlsCertPath, tlsKeyPath := filepath.Join(dir, "server.crt.pem"), filepath.Join(dir, "server.key.pem")
-		putCert(tlsCertPath, tlsKeyPath)
-		configs[id] = fmt.Sprintf(`[backend]
-DataDirectory = %s
-SigningKeyPath = %s
-Listen = 127.0.0.1:198%d
-
-[frontend]
-InviteKeyPath = %s
-TLSCertPath = %s
-TLSKeyPath = %s
-Listen = 127.0.0.1:144%d
-`, dir, filepath.Join(dir, "sk"), i, filepath.Join(dir, "invitekey"), tlsCertPath, tlsKeyPath, i)
-	}
-	for left_i, left_id := range ids {
-		putConf := func(i uint) {
-			configs[left_id] += fmt.Sprintf(`
-[server "127.0.0.1:198%d"]
-PublicKey = %s
-IsCore = %t
-`, i, base64.StdEncoding.EncodeToString(PBEncode(pks[ids[i]])), i < numCoreServers)
-		}
-		for i := uint(0); i < numCoreServers+numVerifiers; i++ {
-			putConf(i)
-		}
-		if uint(left_i) >= numCoreServers+numVerifiers { // put the server itself in its peers irrespectively of stuff
-			putConf(uint(left_i))
-		}
-		ioutil.WriteFile(filepath.Join(dirMap[left_id], "denameserver.cfg"), []byte(configs[left_id]), os.FileMode(0600))
-	}
-	cfg := new(Config)
-	cfg.Freshness = DefaultFreshness
-	cfg.Server = make(map[string]*Server)
-	for i, id := range ids {
-		cfg.Server[fmt.Sprintf("127.0.0.1:144%d", i)] = &Server{PublicKey: base64.StdEncoding.EncodeToString(PBEncode(pks[id]))}
-	}
-	return dirs, cfg, func() {
-		os.RemoveAll(dir)
-	}
-}
-
 func startWithConfigAndBacknet(t *testing.T, numCoreServers, numVerifiers, numSubscribers uint) ([]*server, []string, *Config, func()) {
-	dirs, cfg, teardown := createConfigs(t, numCoreServers, numVerifiers, numSubscribers)
+	dirs, cfg, teardown := testutil.CreateConfigs(t, numCoreServers, numVerifiers, numSubscribers)
 	servers := make([]*server, 0, numCoreServers+numVerifiers+numSubscribers)
 	for _, dir := range dirs {
 		s := StartFromConfigFile(filepath.Join(dir, "denameserver.cfg"))
@@ -341,7 +285,7 @@ func TestServerBacknetRoundtrip(t *testing.T) {
 }
 
 func TestServerRestartSingle(t *testing.T) {
-	dirs, cfg, teardown := createConfigs(t, 1, 0, 0)
+	dirs, cfg, teardown := testutil.CreateConfigs(t, 1, 0, 0)
 	defer teardown()
 	for i := 0; i < 3; i++ {
 		server := StartFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
@@ -354,7 +298,7 @@ func TestServerRestartSingle(t *testing.T) {
 }
 
 func TestServerRestartOneOfTwo(t *testing.T) {
-	dirs, cfg, teardown := createConfigs(t, 2, 0, 0)
+	dirs, cfg, teardown := testutil.CreateConfigs(t, 2, 0, 0)
 	defer teardown()
 	constantServer := StartFromConfigFile(filepath.Join(dirs[1], "denameserver.cfg"))
 	server := StartFromConfigFile(filepath.Join(dirs[0], "denameserver.cfg"))
@@ -380,7 +324,7 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Register(sk, []byte(name), profile, mktoken()); err != nil {
+	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	lookupProfile, err := client.Lookup([]byte(name))
@@ -469,7 +413,7 @@ func TestServerFrontendExpiration(t *testing.T) {
 	}
 	*profile.ExpirationTime = uint64(time.Now().Unix())
 	for i := uint64(1); ; i++ { // try to register with as early expiration as possible
-		if err := client.Register(sk, name, profile, mktoken()); err == nil {
+		if err := client.Register(sk, name, profile, testutil.MakeToken()); err == nil {
 			break
 		} else if err != ErrNotAuthorized {
 			t.Error(err)
@@ -481,7 +425,7 @@ func TestServerFrontendExpiration(t *testing.T) {
 		t.Fatal(err)
 	}
 	for { // try to register another profile for the same name
-		if err := client.Register(sk2, name, profile2, mktoken()); err == nil {
+		if err := client.Register(sk2, name, profile2, testutil.MakeToken()); err == nil {
 			break
 		} else if err != ErrNotAuthorized {
 			t.Error(err)
@@ -502,11 +446,11 @@ func TestServerFrontendRegisterBadExpiration(t *testing.T) {
 		t.Fatal(err)
 	}
 	*profile.ExpirationTime = 0
-	if err := client.Register(sk, []byte(name), profile, mktoken()); err != ErrNotAuthorized {
+	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != ErrNotAuthorized {
 		t.Error(err)
 	}
 	*profile.ExpirationTime = 1 << 62
-	if err := client.Register(sk, []byte(name), profile, mktoken()); err != ErrNotAuthorized {
+	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != ErrNotAuthorized {
 		t.Error(err)
 	}
 }
@@ -548,7 +492,7 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 	if lookupProfile != nil {
 		t.Errorf("invalid invite; lookup reply: %v (error: %v)", lookupProfile, err)
 	}
-	invite := mktoken()
+	invite := testutil.MakeToken()
 	err = client.Register(sk, alice, profile2, invite)
 	if err != nil {
 		t.Error(err)
@@ -570,7 +514,7 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 	}
 	servers[0].frontend.inviteMacKey = nil
 	ted := []byte("ted")
-	err = client.Register(sk, ted, profile, mktoken())
+	err = client.Register(sk, ted, profile, testutil.MakeToken())
 	if err != ErrRegistrationDisabled {
 		t.Error(err)
 	}
@@ -599,7 +543,7 @@ func TestServerVerifierSigns(t *testing.T) {
 			break
 		}
 	}
-	if err := client.Register(sk, []byte(name), profile, mktoken()); err != nil {
+	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	var lookupProfile *Profile
@@ -648,7 +592,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Register(sk, []byte(name), profile, mktoken()); err != nil {
+	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	delete(cfg.Server, serverAddr)
@@ -696,7 +640,7 @@ func BenchmarkServerOneServer(b *testing.B) {
 	}
 	rqs := make([]*ClientMessage, b.N)
 	for i := 0; i < b.N; i++ {
-		rqs[i] = &ClientMessage{ModifyProfile: NewSign(sk, MakeOperation([]byte(fmt.Sprint(i)), profile)), InviteCode: mktoken()}
+		rqs[i] = &ClientMessage{ModifyProfile: NewSign(sk, MakeOperation([]byte(fmt.Sprint(i)), profile)), InviteCode: testutil.MakeToken()}
 	}
 	b.StartTimer()
 	wg.Add(b.N)
