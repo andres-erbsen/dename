@@ -16,12 +16,12 @@ package server
 
 import (
 	"bytes"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"log"
 	"math/rand"

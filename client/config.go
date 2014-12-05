@@ -16,11 +16,11 @@ package client
 
 import (
 	"code.google.com/p/go.net/proxy"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"strings"
 	"time"

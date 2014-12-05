@@ -12,19 +12,18 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-
 package client
 
 import (
 	"bytes"
 	"code.google.com/p/go.net/proxy"
-	"code.google.com/p/goprotobuf/proto"
 	_ "crypto/sha512" // for tls
 	"crypto/tls"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
+	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io"
 	"net"
 	"time"

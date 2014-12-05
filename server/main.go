@@ -16,12 +16,12 @@ package server
 
 import (
 	"code.google.com/p/gcfg"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"log"
 	"net"

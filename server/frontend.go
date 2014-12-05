@@ -15,14 +15,14 @@
 package server
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	_ "crypto/sha512" // for TLS
 	"crypto/tls"
-	. "github.com/andres-erbsen/dename/protocol"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"io"
 	"log"

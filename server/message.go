@@ -15,8 +15,8 @@
 package server
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 )
 
 const (

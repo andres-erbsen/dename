@@ -16,7 +16,6 @@ package server
 
 import (
 	"bytes"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
@@ -26,6 +25,7 @@ import (
 	. "github.com/andres-erbsen/dename/client"
 	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/andres-erbsen/dename/server/testutil"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	mathrand "math/rand"
 	"net"
