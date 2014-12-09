@@ -15,10 +15,11 @@
 package main
 
 import (
-	"github.com/andres-erbsen/dename/client"
-	"github.com/andres-erbsen/dename/dnmgr"
 	"encoding/base64"
 	"fmt"
+	"github.com/andres-erbsen/dename/client"
+	"github.com/andres-erbsen/dename/dnmgr"
+	"io/ioutil"
 	"os"
 )
 
@@ -27,7 +28,9 @@ func usageAndExit() {
 To create a new profile:
   %s init <name> <invite>
 To set the value of a field on an existing profile:
-  %s set <name> <field> <value>`+"\n", os.Args[0], os.Args[0])
+  %s set <name> <field> <value>
+Value '-' indicates standard input (useful if the value contains nul characters).
+`, os.Args[0], os.Args[0])
 	os.Exit(2)
 }
 
@@ -64,6 +67,13 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", fieldName, err)
 			os.Exit(1)
+		}
+		if len(value) == 1 && value[0] == '-' {
+			value, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to read input: %s\n", err)
+				os.Exit(1)
+			}
 		}
 		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
