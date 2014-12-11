@@ -122,8 +122,12 @@ func StartFromConfig(cfg *ServerConfig) *server {
 	server.waitStop.Add(1)
 	go server.Run()
 	if cfg.Backend.Listen != "" {
+		ln, err := net.Listen("tcp", cfg.Backend.Listen)
+		if err != nil {
+			log.Fatal(err)
+		}
 		server.waitStop.Add(1)
-		go backnet.listenBackend(cfg.Backend.Listen)
+		go backnet.listenBackend(ln)
 	}
 	if cfg.Frontend.Listen != "" {
 		server.waitStop.Add(1)
@@ -131,7 +135,12 @@ func StartFromConfig(cfg *ServerConfig) *server {
 		if err != nil {
 			log.Fatal(err)
 		}
-		go server.frontend.listenForClients(cfg.Frontend.Listen, cert)
+		config := tls.Config{Certificates: []tls.Certificate{cert}}
+		ln, err := tls.Listen("tcp", cfg.Frontend.Listen, &config)
+		if err != nil {
+			log.Fatalf("server: listen: %s", err)
+		}
+		go server.frontend.listenForClients(ln)
 	}
 	return server
 }

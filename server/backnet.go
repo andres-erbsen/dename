@@ -16,9 +16,9 @@ package server
 
 import (
 	"bufio"
-	. "github.com/andres-erbsen/dename/protocol"
 	"encoding/binary"
 	"fmt"
+	. "github.com/andres-erbsen/dename/protocol"
 	"io"
 	"log"
 	"net"
@@ -44,11 +44,7 @@ func (b *backNet) AddSubscriber(conn net.Conn) {
 }
 
 // caller MUST call b.waitStop.Add(1) first
-func (b *backNet) listenBackend(address string) error {
-	ln, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
+func (b *backNet) listenBackend(ln net.Listener) error {
 	defer b.waitStop.Done()
 	defer ln.Close()
 	go func() {
