@@ -358,6 +358,15 @@ func TestServerProofOfAbsence(t *testing.T) {
 	if lookupProfile != nil {
 		t.Errorf("frontend lookup got profile when there was none")
 	}
+
+	frontendRoundTrip(t, cfg, "0")
+	lookupProfile, err = client.Lookup([]byte(""))
+	if err != nil {
+		t.Error(err)
+	}
+	if lookupProfile != nil {
+		t.Errorf("frontend lookup got profile when there was none")
+	}
 }
 
 func TestServerFrontendTransfer(t *testing.T) {

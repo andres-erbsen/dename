@@ -15,9 +15,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/andres-erbsen/dename/client"
 	"github.com/andres-erbsen/dename/protocol"
-	"fmt"
 	"os"
 )
 
@@ -48,7 +48,7 @@ func main() {
 	}
 	profile, err := dnmc.Lookup(name)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "lookup failed: %s", err)
+		fmt.Fprintf(os.Stderr, "lookup failed: %s\n", err)
 		os.Exit(3)
 	}
 
