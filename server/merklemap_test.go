@@ -376,12 +376,12 @@ func TestMerklemapLookupMissing(t *testing.T) {
 		panic(err)
 	}
 
-	key := []byte("")
+	key := []byte("missing")
 	v, proof := m.Lookup(key)
 	if !bytes.Equal(v, nil) {
 		panic(fmt.Errorf("Value mismatch: %x / %x", v, nil))
 	}
-	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof, t)
+	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof)
 	if err != nil {
 		panic(err)
 	}

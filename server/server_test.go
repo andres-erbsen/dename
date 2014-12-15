@@ -360,6 +360,42 @@ func TestServerProofOfAbsence(t *testing.T) {
 	}
 
 	frontendRoundTrip(t, cfg, "0")
+	lookupProfile, err = client.Lookup([]byte("missing"))
+	if err != nil {
+		t.Error(err)
+	}
+	if lookupProfile != nil {
+		t.Errorf("frontend lookup got profile when there was none")
+	}
+}
+
+func TestServerNilNameProofOfAbsence(t *testing.T) {
+	var rq_orig, rq_unmarshal ClientMessage
+	rq_orig.ResolveName = []byte("")
+	err := proto.Unmarshal(PBEncode(&rq_orig), &rq_unmarshal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(rq_orig.ResolveName, rq_unmarshal.ResolveName) {
+		t.Skipf("Lookup of \"\" (emptystring) broken due to protobuf issues (%#v -> encode -> decode -> %#v)", rq_orig.ResolveName, rq_unmarshal.ResolveName)
+	}
+
+	_, _, cfg, teardown := startWithConfigAndBacknet(t, 2, 0, 0)
+	defer teardown()
+	frontendRoundTrip(t, cfg, "alice")
+	client, err := NewClient(cfg, nil, testing_tls_config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lookupProfile, err := client.Lookup([]byte("nonexistent"))
+	if err != nil {
+		t.Error(err)
+	}
+	if lookupProfile != nil {
+		t.Errorf("frontend lookup got profile when there was none")
+	}
+
+	frontendRoundTrip(t, cfg, "0")
 	lookupProfile, err = client.Lookup([]byte(""))
 	if err != nil {
 		t.Error(err)
