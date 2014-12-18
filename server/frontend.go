@@ -12,17 +12,15 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	_ "crypto/sha512" // for TLS
-	"crypto/tls"
 	"fmt"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"io"
 	"log"
@@ -53,13 +51,8 @@ func NewFrontend(inviteMacKey []byte) *frontend {
 }
 
 // caller MUST call fe.waitStop.Add(1) first
-func (fe *frontend) listenForClients(address string, cert tls.Certificate) {
+func (fe *frontend) listenForClients(ln net.Listener) {
 	defer fe.waitStop.Done()
-	config := tls.Config{Certificates: []tls.Certificate{cert}}
-	ln, err := tls.Listen("tcp", address, &config)
-	if err != nil {
-		log.Fatalf("server: listen: %s", err)
-	}
 	defer ln.Close()
 	go func() {
 		<-fe.stop

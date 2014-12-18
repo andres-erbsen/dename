@@ -16,10 +16,10 @@ package dnmgr
 
 import (
 	"code.google.com/p/gcfg"
-	"code.google.com/p/goprotobuf/proto"
 	"fmt"
 	dnmc "github.com/andres-erbsen/dename/client"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"os"
 	"path/filepath"

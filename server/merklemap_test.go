@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"bytes"
@@ -353,4 +353,36 @@ func mapTest(db *leveldb.DB, itCount int, byteRange int, opn int) int {
 		}
 	}
 	return 100000000
+}
+
+func TestMerklemapLookupMissing(t *testing.T) {
+	dir, err := ioutil.TempDir("", "merklemap")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(dir)
+	db, err := leveldb.OpenFile(dir, nil)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	m := OpenMerkleMap(db)
+	m.Set([]byte("alice"), []byte{1})
+	m.Set([]byte("0"), []byte{2}) // removing this makes the test pass
+	wb := new(leveldb.Batch)
+	m.Flush(wb)
+	err = db.Write(wb, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	key := []byte("missing")
+	v, proof := m.Lookup(key)
+	if !bytes.Equal(v, nil) {
+		panic(fmt.Errorf("Value mismatch: %x / %x", v, nil))
+	}
+	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof)
+	if err != nil {
+		panic(err)
+	}
 }

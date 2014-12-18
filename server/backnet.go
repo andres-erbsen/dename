@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"bufio"
@@ -44,11 +44,7 @@ func (b *backNet) AddSubscriber(conn net.Conn) {
 }
 
 // caller MUST call b.waitStop.Add(1) first
-func (b *backNet) listenBackend(address string) error {
-	ln, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
+func (b *backNet) listenBackend(ln net.Listener) error {
 	defer b.waitStop.Done()
 	defer ln.Close()
 	go func() {

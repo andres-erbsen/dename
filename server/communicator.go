@@ -12,12 +12,12 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"fmt"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"log"
 	"net"
 	"sync"

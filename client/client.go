@@ -17,13 +17,13 @@ package client
 import (
 	"bytes"
 	"code.google.com/p/go.net/proxy"
-	"code.google.com/p/goprotobuf/proto"
 	_ "crypto/sha512" // for tls
 	"crypto/tls"
 	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io"
 	"net"
 	"time"

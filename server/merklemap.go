@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"crypto/sha256"
@@ -124,12 +124,24 @@ func (m *MerkleMap) Lookup(key []byte) (value []byte, proof []*ClientReply_Merkl
 		proof = append(proof, wireNode)
 		for i := 0; i < len(n.substring); i++ {
 			if n.substring[i] != keyBits[len(n.key)+i] {
+				// The requested path p is not present in the tree.
+				// Let's prove it by showing a valid path that would include a
+				// branch to p if p was present. n is the node at which the
+				// branch would have occurred (at substring index i).
+				if n.getChild(false) != nil {
+					wireNode.LeftChildHash = n.getChild(false).Hash()
+				}
+				if n.getChild(true) != nil {
+					wireNode.RightChildHash = n.getChild(true).Hash()
+				}
 				return
 			}
 		}
 		if len(n.key)+len(n.substring) == HASH_BITS {
+			// path exhausted, no mismatch found => successful lookup
 			return n.value, proof
 		}
+		// recurse into the correct branch of the tree
 		descendingRight := keyBits[len(n.key)+len(n.substring)]
 		if descendingRight && n.getChild(false) != nil {
 			wireNode.LeftChildHash = n.getChild(false).Hash()

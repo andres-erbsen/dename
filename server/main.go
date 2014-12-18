@@ -12,20 +12,19 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package main
+package server
 
 import (
 	"code.google.com/p/gcfg"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 )
 
 type ServerConfig struct {
@@ -108,11 +107,15 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 	return bn, server, err
 }
 
-func startFromConfigFile(path string) *server {
+func StartFromConfigFile(path string) *server {
 	cfg := new(ServerConfig)
 	if err := gcfg.ReadFileInto(cfg, path); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	return StartFromConfig(cfg)
+}
+
+func StartFromConfig(cfg *ServerConfig) *server {
 	backnet, server, err := serverFromConfig(cfg)
 	if err != nil {
 		log.Fatalf("Startup failed: %v", err)
@@ -120,8 +123,12 @@ func startFromConfigFile(path string) *server {
 	server.waitStop.Add(1)
 	go server.Run()
 	if cfg.Backend.Listen != "" {
+		ln, err := net.Listen("tcp", cfg.Backend.Listen)
+		if err != nil {
+			log.Fatal(err)
+		}
 		server.waitStop.Add(1)
-		go backnet.listenBackend(cfg.Backend.Listen)
+		go backnet.listenBackend(ln)
 	}
 	if cfg.Frontend.Listen != "" {
 		server.waitStop.Add(1)
@@ -129,12 +136,12 @@ func startFromConfigFile(path string) *server {
 		if err != nil {
 			log.Fatal(err)
 		}
-		go server.frontend.listenForClients(cfg.Frontend.Listen, cert)
+		config := tls.Config{Certificates: []tls.Certificate{cert}}
+		ln, err := tls.Listen("tcp", cfg.Frontend.Listen, &config)
+		if err != nil {
+			log.Fatalf("server: listen: %s", err)
+		}
+		go server.frontend.listenForClients(ln)
 	}
 	return server
-}
-
-func main() {
-	startFromConfigFile(os.Args[1])
-	select {}
 }

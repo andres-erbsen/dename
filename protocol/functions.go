@@ -15,11 +15,11 @@
 package protocol
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"github.com/agl/ed25519"
+	"github.com/gogo/protobuf/proto"
 )
 
 const MAX_VALIDITY_PERIOD = 60 * 60 * 24 * 365 // seconds

@@ -16,11 +16,11 @@ package client
 
 import (
 	"code.google.com/p/go.net/proxy"
-	"code.google.com/p/goprotobuf/proto"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	. "github.com/andres-erbsen/dename/protocol"
+	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -85,6 +85,7 @@ func NewClient(cfg *Config, dialer proxy.Dialer, tlsConfig *tls.Config) (c *Clie
 			}
 			serverTLSConfig.RootCAs = x509.NewCertPool()
 			serverTLSConfig.RootCAs.AppendCertsFromPEM(certPEM)
+			// TODO: allow certificates with the CA bit not set
 		}
 		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, tlsConfig: &serverTLSConfig}
 	}
