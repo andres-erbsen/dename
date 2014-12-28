@@ -147,7 +147,7 @@ func (b *backNet) SendToServer(id uint64, msg *BackendMessage) {
 	}
 
 	if err := writeMessage(conn, PBEncode(msg)); err != nil {
-		log.Printf("Lost connection to %x: %v", id, err)
+		log.Printf("Lost connection to %x <%s>: %v", id, b.servers[id].Addr, err)
 		server.connMu.Lock()
 		if server.conn == conn {
 			server.conn = nil

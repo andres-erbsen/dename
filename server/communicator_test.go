@@ -16,11 +16,10 @@ package server
 
 import (
 	. "github.com/andres-erbsen/dename/protocol"
-	"fmt"
 	"testing"
 )
 
-func TestCollectConsistentGetsAll(t *testing.T) {
+func TestCollectFromCoreGetsAll(t *testing.T) {
 	const (
 		n = 5
 	)
@@ -41,10 +40,7 @@ func TestCollectConsistentGetsAll(t *testing.T) {
 		msg.HashOfOperations = []byte{0xff}
 		c.servers[uint64(i)].messageBroker.OnReceive(msg)
 	}
-	ms, err := c.CollectGloballyConsistent(
-		1, 1,
-		func(m *Message) string { return fmt.Sprintf("%x", m.HashOfOperations) },
-	)
+	ms, err := c.CollectFromCore(1, 1, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

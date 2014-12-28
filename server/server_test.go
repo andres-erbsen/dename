@@ -32,6 +32,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -153,7 +154,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 			comm.servers[id] = &ServerInfo{ID: id, Profile_PublicKey: pks[id], IsCore: true, messageBroker: &MessageBroker{serverID: id, servernet: net}}
 		}
 		fe := NewFrontend(testutil.INVITE_KEY)
-		server, err := OpenServer(filepath.Join(dir, fmt.Sprintf("%x", id), "db"), sks[id], comm, fe)
+		server, err := OpenServer(filepath.Join(dir, fmt.Sprintf("%x", id), "db"), sks[id], comm, fe, 0)
 		if err != nil {
 			panic(err)
 		}
@@ -587,6 +588,7 @@ func TestServerVerifierSigns(t *testing.T) {
 		if err == ErrCouldntVerify {
 			break
 		}
+		runtime.Gosched()
 	}
 	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
@@ -597,6 +599,74 @@ func TestServerVerifierSigns(t *testing.T) {
 		if err != ErrCouldntVerify {
 			break
 		}
+		runtime.Gosched()
+	}
+	if !reflect.DeepEqual(profile, lookupProfile) {
+		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
+	}
+}
+
+func TestServerVerifierWaits(t *testing.T) {
+	servers, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 1, 0)
+	servers[1].consensusThreshold = 2 // verifier requires both verifier and core (racy set)
+	defer teardown()
+	profile, sk, err := NewProfile(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verifier := cfg.Server["127.0.0.1:1441"]
+	delete(cfg.Server, "127.0.0.1:1441")
+	coreClient, err := NewClient(cfg, nil, testing_tls_config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Server["127.0.0.1:1441"] = verifier
+	cfg.Server["unreachable"] = cfg.Server["127.0.0.1:1440"]
+	delete(cfg.Server, "127.0.0.1:1440")
+	verifierClient, err := NewClient(cfg, nil, testing_tls_config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// wait until the server is up
+	for {
+		_, err := coreClient.Lookup(nil)
+		if err == ErrCouldntVerify {
+			break
+		}
+		runtime.Gosched()
+	}
+
+	// do a profile update to make sure verifier has fully initialized.
+	if err := coreClient.Register(sk, []byte("bob"), profile, testutil.MakeToken()); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		_, err := verifierClient.Lookup([]byte("bob"))
+		if err == nil {
+			break
+		}
+		runtime.Gosched()
+	}
+
+	name := []byte("alice")
+	if err := coreClient.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
+		t.Fatal(err)
+	}
+	// Lookup through the verifier, requiring both signatures
+	// It should never return ErrCouldntVerify because the verifier
+	// should not switch to the new root without 2 signatures
+	var lookupProfile *Profile
+	for {
+		lookupProfile, err = verifierClient.Lookup([]byte(name))
+		if err != nil {
+			t.Error(err)
+		}
+		if lookupProfile != nil {
+			break
+		}
+		runtime.Gosched()
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)

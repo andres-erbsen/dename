@@ -105,7 +105,7 @@ func (c *communicator) OnMessage(buf []byte, conn net.Conn) {
 
 var errStop = fmt.Errorf("Shutting down")
 
-func (c *communicator) CollectFromEach(round uint64, phase int, reminder *SignedServerMessage) (map[uint64]*Message, error) {
+func (c *communicator) CollectFromCore(round uint64, phase int, reminder *SignedServerMessage) (map[uint64]*Message, error) {
 	ret := make(map[uint64]*Message, len(c.servers))
 	mbChannels := make([]chan *Message, 0, len(c.servers))
 	for id, s := range c.servers {
@@ -131,21 +131,48 @@ func (c *communicator) CollectFromEach(round uint64, phase int, reminder *Signed
 	return ret, nil
 }
 
-func (c *communicator) CollectGloballyConsistent(round uint64, phase int, key func(*Message) string) (map[uint64]*Message, error) {
-	msgs, err := c.CollectFromEach(round, phase, nil)
-	if err != nil {
-		return nil, err
+func (c *communicator) CollectWithThreshold(round uint64, phase, threshold int) (map[uint64]*Message, error) {
+	ret, err := c.CollectFromCore(round, phase, nil)
+	if err != nil || len(ret) >= threshold {
+		return ret, err
 	}
-	var m0 *Message
-	for _, m0 = range msgs {
-		break
+
+	// stack of defers: signal stop to workers, wait for shutdown, close collectChan
+	collectChan := make(chan *Message)
+	defer close(collectChan)
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	doneChan := make(chan struct{})
+	defer close(doneChan)
+
+	for id, s := range c.servers {
+		if s.IsCore {
+			continue
+		}
+		if smsg := c.recallMessage(round, uint64(phase), id); smsg != nil {
+			msg := new(Message)
+			msg.SignedServerMessage = smsg
+			MustUnmarshal(smsg.Message, &msg.SignedServerMessage_ServerMessage)
+			ret[*msg.Server] = msg
+			continue
+		}
+		wg.Add(1)
+		go func(s *ServerInfo) {
+			defer wg.Done()
+			select {
+			case collectChan <- <-s.messageBroker.Collect(round, phase, nil):
+			case <-doneChan:
+			}
+		}(s)
 	}
-	for _, m := range msgs {
-		if key(m) != key(m0) {
-			return nil, fmt.Errorf("collect %d:%d: inconsistency between %x and %x (%d total)", round, phase, m.GetServer(), m0.GetServer(), len(msgs))
+	for len(ret) < threshold {
+		if msg := <-collectChan; msg != nil {
+			ret[*msg.Server] = msg
+		} else { // messageBroker has been shut down
+			return nil, errStop
 		}
 	}
-	return msgs, nil
+	return ret, nil
 }
 
 func (c *communicator) NotifyAny(round uint64, phase int) chan struct{} {

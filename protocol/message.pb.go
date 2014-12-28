@@ -16,6 +16,7 @@
 		ClientMessage
 		ClientReply
 */
+
 package protocol
 
 import proto "github.com/gogo/protobuf/proto"

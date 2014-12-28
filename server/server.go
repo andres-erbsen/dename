@@ -56,12 +56,13 @@ type server struct {
 	reconfirmationTimer    *time.Timer
 	reconfirmationTimerMu  sync.Mutex
 	reconfirmationInterval time.Duration
+	consensusThreshold     int // # servers required out of len(communicator.servers)
 }
 
 func OpenServer(dbpath string, sk *[ed25519.PrivateKeySize]byte,
-	communicator *communicator, frontend *frontend) (*server, error) {
+	communicator *communicator, frontend *frontend, threshold int) (*server, error) {
 	ret := &server{sk: sk, communicator: communicator, frontend: frontend,
-		stop: make(chan struct{}), db: openDB(dbpath)}
+		stop: make(chan struct{}), db: openDB(dbpath), consensusThreshold: threshold}
 	server := ret
 	frontend.server = server
 	communicator.recallMessage = server.RecallMessage
@@ -91,11 +92,13 @@ func (server *server) loadState() (err error) {
 	if server.state.round < 1 {
 		return nil
 	}
-	for _, id := range server.coreServerIDs {
+	for id, _ := range server.communicator.servers {
 		msg := new(Message)
 		msg.SignedServerMessage = server.RecallMessage(server.state.round, PHASE_HASH_STATE, id)
-		MustUnmarshal(msg.SignedServerMessage.Message, &msg.SignedServerMessage_ServerMessage)
-		server.state.confirmations = append(server.state.confirmations, msg)
+		if msg.SignedServerMessage != nil {
+			MustUnmarshal(msg.SignedServerMessage.Message, &msg.SignedServerMessage_ServerMessage)
+			server.state.confirmations = append(server.state.confirmations, msg)
+		}
 	}
 	return nil
 }
@@ -138,7 +141,7 @@ func (server *server) Run() {
 	roundNumber := server.GetRoundNumber()
 	server.StartCollectingReconfirmations(roundNumber - 1)
 	for ; ; roundNumber++ {
-		if !justStarted {
+		if server.communicator.servers[server.id].IsCore && !justStarted {
 			select {
 			case <-server.stop:
 				return
@@ -232,7 +235,7 @@ func (server *server) PrepareOperations(roundNumber uint64, getOperations func()
 	if !server.communicator.servers[server.id].IsCore {
 		reminder = nil
 	}
-	hashOfOperationsMsgs, err := server.communicator.CollectFromEach(roundNumber, PHASE_HASH_OPS, reminder)
+	hashOfOperationsMsgs, err := server.communicator.CollectFromCore(roundNumber, PHASE_HASH_OPS, reminder)
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -246,8 +249,11 @@ func (server *server) PrepareOperations(roundNumber uint64, getOperations func()
 	ourMsgHashHashes.Round = &roundNumber
 	server.Publish(wb, ourMsgHashHashes)
 
-	hashOfHashesMsgs, err := server.communicator.CollectGloballyConsistent(roundNumber, PHASE_HASH_HASHES, msgHashOfHashes_s)
+	hashOfHashesMsgs, err := server.communicator.CollectFromCore(roundNumber, PHASE_HASH_HASHES, nil)
 	if err != nil {
+		return nil, 0, nil, err
+	}
+	if err := checkAllSame(hashOfHashesMsgs, msgHashOfHashes_s); err != nil {
 		return nil, 0, nil, err
 	}
 	wb = batchMsgs(wb, flattenMsgs(hashOfHashesMsgs))
@@ -257,7 +263,7 @@ func (server *server) PrepareOperations(roundNumber uint64, getOperations func()
 	ourOperationsMsg.Round = &roundNumber
 	server.Publish(nil, ourOperationsMsg)
 
-	operationsMsgs, err := server.communicator.CollectFromEach(roundNumber, PHASE_OPS, nil)
+	operationsMsgs, err := server.communicator.CollectFromCore(roundNumber, PHASE_OPS, nil)
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -308,9 +314,12 @@ func (server *server) FinalizeRound(roundNumber uint64, merklemap *MerkleMap, wb
 	wb.Put([]byte("Vround"), roundNumberBuf[:n])
 	merklemap.Flush(wb)
 
-	hashOfStateMsgs, err := server.communicator.CollectGloballyConsistent(
-		roundNumber, PHASE_HASH_STATE, msgHashOfState_s)
+	hashOfStateMsgs, err := server.communicator.CollectWithThreshold(
+		roundNumber, PHASE_HASH_STATE, server.consensusThreshold)
 	if err != nil {
+		return err
+	}
+	if err := checkAllSame(hashOfStateMsgs, msgHashOfState_s); err != nil {
 		return err
 	}
 	hashOfStateMsgsFlat := flattenMsgs(hashOfStateMsgs)
@@ -418,6 +427,19 @@ func (server *server) RecallMessage(round, phase, serverID uint64) *SignedServer
 	}
 	MustUnmarshal(msgData, smsg)
 	return smsg
+}
+
+func checkAllSame(msgs map[uint64]*Message, key func(*Message) string) error {
+	var m0 *Message
+	for _, m0 = range msgs {
+		break
+	}
+	for _, m := range msgs {
+		if key(m) != key(m0) {
+			return fmt.Errorf("collect %d:%d: inconsistency between %x and %x (%d total)", m.GetRound(), m.Phase(), m.GetServer(), m0.GetServer(), len(msgs))
+		}
+	}
+	return nil
 }
 
 type uint64s []uint64

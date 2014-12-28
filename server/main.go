@@ -29,9 +29,10 @@ import (
 
 type ServerConfig struct {
 	Backend struct {
-		DataDirectory  string
-		SigningKeyPath string
-		Listen         string // address:port
+		DataDirectory      string
+		SigningKeyPath     string
+		Listen             string // address:port
+		ConsensusThreshold int
 	}
 	Frontend struct {
 		Listen        string // address:port
@@ -86,7 +87,7 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 			messageBroker:     &MessageBroker{serverID: pk.ID(), servernet: comm.serverNet},
 		}
 	}
-	server, err := OpenServer(cfg.Backend.DataDirectory, sk, comm, fe)
+	server, err := OpenServer(cfg.Backend.DataDirectory, sk, comm, fe, cfg.Backend.ConsensusThreshold)
 	if err != nil {
 		return nil, nil, fmt.Errorf("openserver: %s", err)
 	}
