@@ -141,7 +141,7 @@ func (server *server) Run() {
 	roundNumber := server.GetRoundNumber()
 	server.StartCollectingReconfirmations(roundNumber - 1)
 	for ; ; roundNumber++ {
-		if !justStarted {
+		if server.communicator.servers[server.id].IsCore && !justStarted {
 			select {
 			case <-server.stop:
 				return
