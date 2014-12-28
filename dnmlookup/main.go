@@ -15,10 +15,12 @@
 package main
 
 import (
+	"code.google.com/p/gcfg"
 	"fmt"
 	"github.com/andres-erbsen/dename/client"
 	"github.com/andres-erbsen/dename/protocol"
 	"os"
+	"path/filepath"
 )
 
 func usageAndExit() {
@@ -42,7 +44,14 @@ func main() {
 		}
 	}
 
-	dnmc, err := client.NewClient(nil, nil, nil)
+	clientCfg := new(client.Config)
+	err := gcfg.ReadFileInto(clientCfg, filepath.Join(os.Getenv("HOME"), ".config", "dename", "authorities.cfg"))
+	if os.IsNotExist(err) {
+		clientCfg = nil
+	} else if err != nil {
+		panic(err)
+	}
+	dnmc, err := client.NewClient(clientCfg, nil, nil)
 	if err != nil {
 		panic(err)
 	}
