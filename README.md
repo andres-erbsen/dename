@@ -159,10 +159,43 @@ does not have to be fancy) and are willing to put in the effort of
 deploying a Go program (single static binary), [contact
 us](mailto:dename@mit.edu) and let's talk!
 
-## Disclaimer
+For the impatient, here is how you can set up a local server and add it to your
+client's anytrust set.
 
-This is not a Google project. The code is Copyright 2014 Google Inc, released under the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+	go run utils/mkkey/mkkey.go > pk 2> sk
 
+On the server, create `denameserver.cfg` in the directory where the server will live:
+
+	[backend]
+	DataDirectory=.
+	SigningKeyPath=sk
+	Listen=0.0.0.0:8877
+	[frontend]
+	Listen=0.0.0.0:8899
+	TLSCertPath=tls.crt
+	TLSKeyPath=tls.key
+	[server "dename.mit.edu:8877"]
+	PublicKey=CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+	IsCore=true
+	[server "0.0.0.0:8877"]
+	PublicKey= # base64 pk here
+
+Start the server:
+
+	go run server/server/main.go denameserver.cfg
+
+On each client, create/edit `~/.config/dename/authorities.cfg`:
+
+	[freshness]
+	Threshold = 15s
+	NumConfirmations = 1
+
+	[server "dename@mit.edu"]
+	PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+
+	[server "your-server.address:8877"]
+	PublicKey= # base64 pk here
+	TLSCertFile=/home/you/.ca.crt
 
 [OpenPGP]: https://andreser.scripts.mit.edu/blog/2013-08-10-how-to-use-openpgp-for-email-in-1000-words/
 [`ssh` host key]: http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-checking-a-server%E2%80%99s-ssh-host-fingerprint-with-the-web-console#Explaining
