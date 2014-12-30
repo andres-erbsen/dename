@@ -46,11 +46,11 @@ Add the [`ssh` host key] of *Alice's* machine *yummy.tld*:
 
 Add *Alice's* [OpenPGP] key to the local keyring:
 
-	gpg --recv-keys $(dnmlookup alice pgp)
+	gpg --recv-keys "$(dnmlookup alice pgp)"
 
 Encrypt a message so that only *Alice* can read it:
 
-	gpg --armor --encrypt --recipient $(dnmlookup alice pgp) > message.pgp
+	gpg --armor --encrypt --recipient "$(dnmlookup alice pgp)" > message.pgp
 
 Verify a message *Alice* signed using [`signify`]:
 
@@ -64,11 +64,11 @@ Create a new name-profile pair with the name *Bob*:
 
 Add `ssh` public keys a profile: (the `.pub` is crucial, otherwise the secret keys will be uploaded as well)
 
-	dnmgr set bob ssh $(cat ~/.ssh/id_*.pub)
+	dnmgr set bob ssh "$(cat ~/.ssh/id_*.pub)"
 
 Add a `gpg` key to the profile (by fingerprint, the key itself is too big):
 
-	dnmgr set bob pgp $(gpg --fingerprint -K $KEYID | grep -im1 fingerprint\ = | tr -dc A-F0-9)
+	dnmgr set bob pgp "$(gpg --fingerprint -K $KEYID | grep -im1 fingerprint\ = | tr -dc A-F0-9)"
 
 ### Scripts
 

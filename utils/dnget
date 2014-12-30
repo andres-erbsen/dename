@@ -7,9 +7,9 @@
 distributor="$1"
 filename="$2"
 DNGET_FIELD=134625
-record=$(dnmlookup "$distributor" "$DNGET_FIELD" | grep -- "/$filename\$" | head -1 | sed 's/\s\+/\t/g')
+record="$(dnmlookup "$distributor" "$DNGET_FIELD" | grep -- "/$filename\$" | head -1 | sed 's/\s\+/\t/g')"
 echo "$record"
-hash=$(echo "$record" | cut -f1)
-url=$(echo "$record" | cut -f2)
+hash="$(echo "$record" | cut -f1)"
+url="$(echo "$record" | cut -f2)"
 curl --progress-bar --proto =http,https,ftp,ftps --url "$url" --output "$filename"
 echo "$hash  $filename" | sha256sum --check || echo 'Verification failed. It is probably not a good idea to use this file.'
