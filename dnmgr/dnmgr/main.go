@@ -28,8 +28,9 @@ func usageAndExit() {
 To create a new profile:
   %s init <name> <invite>
 To set the value of a field on an existing profile:
-  %s set <name> <field> <value>
-Value '-' indicates standard input (useful if the value contains nul characters).
+  %s set <name> <field> [value]
+If a value is not provided in the arguments, it will be read from standard input.
+This is(useful if the value contains nul characters.
 `, os.Args[0], os.Args[0])
 	os.Exit(2)
 }
@@ -59,23 +60,30 @@ func main() {
 			os.Exit(1)
 		}
 	case "set":
-		if len(args) < 3 {
+		var name, fieldName string
+		var value []byte
+		if len(args) == 2 || len(args) == 3 {
+			name, fieldName = args[0], args[1]
+			if len(args) == 3 {
+				value = []byte(args[3])
+			}
+		} else {
 			usageAndExit()
 		}
-		name, fieldName, value := []byte(args[0]), args[1], []byte(args[2])
-		fieldNumber, err := client.FieldByName(fieldName)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", fieldName, err)
-			os.Exit(1)
-		}
-		if len(value) == 1 && value[0] == '-' {
+		if value == nil {
+			var err error
 			value, err = ioutil.ReadAll(os.Stdin)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "failed to read input: %s\n", err)
 				os.Exit(1)
 			}
 		}
-		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
+		fieldNumber, err := client.FieldByName(fieldName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", fieldName, err)
+			os.Exit(1)
+		}
+		if err := dnmgr.SetProfileField([]byte(name), fieldNumber, value, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
 			os.Exit(1)
 		}
