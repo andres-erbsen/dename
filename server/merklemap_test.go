@@ -55,7 +55,7 @@ func TestOneEntry(t *testing.T) {
 	if !bytes.Equal(v, val) {
 		panic(fmt.Errorf("Value mismatch: %x / %x", v, val))
 	}
-	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof, t)
+	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), string(key), proof, t)
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +98,7 @@ func TestTwoEntries(t *testing.T) {
 			fmt.Printf("Lookup %d:\n", i)
 		}
 		_, proof := m.Lookup(key)
-		_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof, t)
+		_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), string(key), proof, t)
 		if err != nil {
 			panic(err)
 		}
@@ -190,7 +190,7 @@ func TestRandomly(t *testing.T) {
 		} else {
 			itCount = 100
 		}
-		time := mapTest(db, itCount, (1+rand.Intn(256))*randSign, 3)
+		time := mapTest(db, itCount, (1+rand.Intn(256))*randSign, 3, t)
 		if testing.Verbose() {
 			fmt.Printf("seed %x: %v\n", i, time)
 		}
@@ -224,10 +224,10 @@ func BenchmarkBigTree(b *testing.B) {
 	} else {
 		iters = 1000000
 	}
-	mapTest(db, iters, 256, 2)
+	mapTest(db, iters, 256, 2, b)
 }
 
-func mapTest(db *leveldb.DB, itCount int, byteRange int, opn int) int {
+func mapTest(db *leveldb.DB, itCount int, byteRange int, opn int, t testing.TB) int {
 	m := OpenMerkleMap(db)
 	m.dontHashKeys = true
 	bytez := func(b byte) [32]byte {
@@ -287,7 +287,7 @@ func mapTest(db *leveldb.DB, itCount int, byteRange int, opn int) int {
 		}
 		val, proof := m.Lookup(key)
 		if val != nil {
-			_, err := client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof /*testing*/, true)
+			_, err := client.VerifyResolveAgainstRoot(m.GetRootHash(), string(key), proof, t)
 			if err != nil {
 				panic(err)
 			}
@@ -381,7 +381,7 @@ func TestMerklemapLookupMissing(t *testing.T) {
 	if !bytes.Equal(v, nil) {
 		panic(fmt.Errorf("Value mismatch: %x / %x", v, nil))
 	}
-	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), key, proof)
+	_, err = client.VerifyResolveAgainstRoot(m.GetRootHash(), string(key), proof)
 	if err != nil {
 		panic(err)
 	}

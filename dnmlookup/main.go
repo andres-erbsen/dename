@@ -33,7 +33,7 @@ func main() {
 	if !(2 <= len(os.Args) && len(os.Args) <= 3) {
 		usageAndExit()
 	}
-	name := []byte(os.Args[1])
+	name := os.Args[1]
 	var field int32
 	if len(os.Args) == 3 {
 		var err error

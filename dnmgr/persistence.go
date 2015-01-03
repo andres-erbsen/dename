@@ -49,13 +49,13 @@ func dirAndClient(configDir string, client *dnmc.Client) (string, *dnmc.Client, 
 	return configDir, client, nil
 }
 
-func filename(s []byte) string {
-	return string(s) // TODO: sanitize
+func filename(s string) string {
+	return s // FIXME: sanitize
 }
 
 // Register registers associates name with profile and persists the secret key
 // and the profile on disk.
-func Register(sk *[64]byte, profile *Profile, name []byte, invite []byte, configDir string, client *dnmc.Client) error {
+func Register(sk *[64]byte, profile *Profile, name string, invite []byte, configDir string, client *dnmc.Client) error {
 	configDir, client, err := dirAndClient(configDir, client)
 	if err != nil {
 		return fmt.Errorf("failed to load config file: %v", err)
@@ -81,7 +81,7 @@ func Register(sk *[64]byte, profile *Profile, name []byte, invite []byte, config
 // LoadLocalProfile returns the secret key and the profile that are locally
 // known to be correspond to name. This information is not guaranteed to be
 // current -- if a fresh profile is needed, use client.Lookup instead.
-func LoadLocalProfile(name []byte, configDir string) (sk *[64]byte, profile *Profile, err error) {
+func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, err error) {
 	if configDir == "" {
 		configDir = defaultConfigDir
 	}
@@ -109,7 +109,7 @@ func LoadLocalProfile(name []byte, configDir string) (sk *[64]byte, profile *Pro
 // SetProfileField downloads the profile for name, sets the value of a field
 // and uses sk to remap the name to the old profile. The local copy of the
 // profile is ignored and overwritten.
-func SetProfileField(name []byte, field int32, value []byte, configDir string, client *dnmc.Client) error {
+func SetProfileField(name string, field int32, value []byte, configDir string, client *dnmc.Client) error {
 	configDir, client, err := dirAndClient(configDir, client)
 	if err != nil {
 		return fmt.Errorf("failed to load config file: %v", err)

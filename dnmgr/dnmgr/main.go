@@ -45,7 +45,7 @@ func main() {
 		if len(args) < 2 {
 			usageAndExit()
 		}
-		name := []byte(args[0])
+		name := args[0]
 		invite, err := base64.StdEncoding.DecodeString(args[1])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "invalid invite (base64 decoding failed: %s)\n", err)
@@ -83,7 +83,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", fieldName, err)
 			os.Exit(1)
 		}
-		if err := dnmgr.SetProfileField([]byte(name), fieldNumber, value, "", nil); err != nil {
+		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
 			os.Exit(1)
 		}

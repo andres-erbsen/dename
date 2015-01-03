@@ -49,7 +49,7 @@ var profile *Profile
 
 func register(name string) {
 	for {
-		err := client.Register(sk, []byte(name), profile, create_invite_token())
+		err := client.Register(sk, name, profile, create_invite_token())
 		if err != nil {
 			log.Print(name, err)
 			if err == ErrNotAuthorized {

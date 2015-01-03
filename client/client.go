@@ -81,9 +81,9 @@ next_server:
 // client's config. It is guaranteed that at least NumConfirmations of the
 // servers have confirmed the correctness of the (name, profile) mapping and
 // that Freshness.NumConfirmations have done this within Freshness.Threshold.
-func (c *Client) Lookup(name []byte) (profile *Profile, err error) {
+func (c *Client) Lookup(name string) (profile *Profile, err error) {
 	err = c.atSomeServer(func(conn net.Conn) (bool, error) {
-		rq := &ClientMessage{PeekState: &true_, ResolveName: name, PadReplyTo: &pad_to}
+		rq := &ClientMessage{PeekState: &true_, ResolveName: []byte(name), PadReplyTo: &pad_to}
 		if _, err = conn.Write(Frame(Pad(PBEncode(rq), 256))); err != nil {
 			return false, err
 		}
@@ -183,10 +183,10 @@ func readReply(conn net.Conn) (reply *ClientReply, err error) {
 
 // Low-level convenience function to create a SignedProfileOperation with no
 // signatures. You probably want to use Register, Modify or Transfer instead.
-func MakeOperation(name []byte, profile *Profile) *SignedProfileOperation {
+func MakeOperation(name string, profile *Profile) *SignedProfileOperation {
 	return &SignedProfileOperation{
 		ProfileOperation: PBEncode(&SignedProfileOperation_ProfileOperationT{
-			Name:       name,
+			Name:       []byte(name),
 			NewProfile: PBEncode(profile),
 		}),
 	}
@@ -195,7 +195,7 @@ func MakeOperation(name []byte, profile *Profile) *SignedProfileOperation {
 // Creates a signed operation structure to transfer name to profile. To make
 // this change take effect, the recipient has to call AcceptTransfer with the
 // secret key whose public counterpart is in profile.
-func TransferProposal(sk *[ed25519.PrivateKeySize]byte, name []byte,
+func TransferProposal(sk *[ed25519.PrivateKeySize]byte, name string,
 	profile *Profile) *SignedProfileOperation {
 	return OldSign(sk, MakeOperation(name, profile))
 }
@@ -217,7 +217,7 @@ func NewSign(sk *[ed25519.PrivateKeySize]byte, op *SignedProfileOperation) *Sign
 // Register associates a profile with a name. The invite is used to convince
 // the server that we are indeed allowed a new name, it is not associated with
 // the profile in any way. If profile.Version is set, it must be 0.
-func (c *Client) Register(sk *[ed25519.PrivateKeySize]byte, name []byte, profile *Profile, invite []byte) error {
+func (c *Client) Register(sk *[ed25519.PrivateKeySize]byte, name string, profile *Profile, invite []byte) error {
 	return c.Enact(NewSign(sk, MakeOperation(name, profile)), invite)
 }
 
@@ -231,7 +231,7 @@ func (c *Client) AcceptTransfer(sk *[ed25519.PrivateKeySize]byte, op *SignedProf
 // ensure that profile.Version is strictly greater than the version of the
 // currently registered profile; it is usually good practice to increase the
 // version by exactly one.
-func (c *Client) Modify(sk *[ed25519.PrivateKeySize]byte, name []byte, profile *Profile) error {
+func (c *Client) Modify(sk *[ed25519.PrivateKeySize]byte, name string, profile *Profile) error {
 	return c.Enact(NewSign(sk, OldSign(sk, MakeOperation(name, profile))), nil)
 }
 

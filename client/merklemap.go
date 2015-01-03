@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	. "github.com/andres-erbsen/dename/protocol"
+	"testing"
 )
 
 const hASH_BYTES = 32
@@ -36,12 +37,12 @@ const hASH_BYTES = 32
 // parts of the trie contained in resolve unambiguously determine the result of
 // the lookup of name by running the binary trie tree lookup algorithm on these
 // nodes.
-func VerifyResolveAgainstRoot(rootHash, name []byte, resolve []*ClientReply_MerklemapNode, testing ...interface{}) (
+func VerifyResolveAgainstRoot(rootHash []byte, name string, resolve []*ClientReply_MerklemapNode, testing ...testing.TB) (
 	profile []byte, err error) {
 	if !bytes.Equal(reproduceRootHash(resolve), rootHash) {
 		return nil, fmt.Errorf("root hash does not match")
 	}
-	nameHash := sha256.Sum256(name)
+	nameHash := sha256.Sum256([]byte(name))
 	if len(testing) > 0 {
 		copy(nameHash[:], name)
 	}

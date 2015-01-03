@@ -195,8 +195,7 @@ func TestServerEmptyDoesNotCrashOnReads(*testing.T) {
 	servers[0].frontend.handleRequest(&ClientMessage{ResolveName: []byte("nonexistent")})
 }
 
-func roundTrip(t *testing.T, cfg *Config, server *server, nameStr string) {
-	name := []byte(nameStr)
+func roundTrip(t *testing.T, cfg *Config, server *server, name string) {
 	profile, sk, err := NewProfile(nil, nil)
 	if err != nil {
 		panic(err)
@@ -206,7 +205,7 @@ func roundTrip(t *testing.T, cfg *Config, server *server, nameStr string) {
 		InviteCode:    testutil.MakeToken(),
 	})
 	rootReply := server.frontend.handleRequest(&ClientMessage{PeekState: &true_})
-	resolveReply := server.frontend.handleRequest(&ClientMessage{ResolveName: name})
+	resolveReply := server.frontend.handleRequest(&ClientMessage{ResolveName: []byte(name)})
 	if len(resolveReply.LookupNodes) == 0 {
 		t.Fatalf("No reply:\n%v\n%v\n%v", *rqReply, *rootReply, *resolveReply)
 	}
@@ -325,10 +324,10 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
-	lookupProfile, err := client.Lookup([]byte(name))
+	lookupProfile, err := client.Lookup(name)
 	if err != nil {
 		t.Error(err)
 	}
@@ -352,7 +351,7 @@ func TestServerProofOfAbsence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lookupProfile, err := client.Lookup([]byte("nonexistent"))
+	lookupProfile, err := client.Lookup("nonexistent")
 	if err != nil {
 		t.Error(err)
 	}
@@ -361,7 +360,7 @@ func TestServerProofOfAbsence(t *testing.T) {
 	}
 
 	frontendRoundTrip(t, cfg, "0")
-	lookupProfile, err = client.Lookup([]byte("missing"))
+	lookupProfile, err = client.Lookup("missing")
 	if err != nil {
 		t.Error(err)
 	}
@@ -388,7 +387,7 @@ func TestServerNilNameProofOfAbsence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lookupProfile, err := client.Lookup([]byte("nonexistent"))
+	lookupProfile, err := client.Lookup("nonexistent")
 	if err != nil {
 		t.Error(err)
 	}
@@ -397,7 +396,7 @@ func TestServerNilNameProofOfAbsence(t *testing.T) {
 	}
 
 	frontendRoundTrip(t, cfg, "0")
-	lookupProfile, err = client.Lookup([]byte(""))
+	lookupProfile, err = client.Lookup("")
 	if err != nil {
 		t.Error(err)
 	}
@@ -420,7 +419,7 @@ func TestServerFrontendTransfer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.AcceptTransfer(sk2, TransferProposal(sk, []byte("alice"), profile2)); err != nil {
+	if err := client.AcceptTransfer(sk2, TransferProposal(sk, "alice", profile2)); err != nil {
 		t.Error(err)
 	}
 }
@@ -437,10 +436,10 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.AcceptTransfer(sk, TransferProposal(sk, []byte("alice"), profile2)); err != ErrNotAuthorized {
+	if err := client.AcceptTransfer(sk, TransferProposal(sk, "alice", profile2)); err != ErrNotAuthorized {
 		t.Error(err)
 	}
-	if err := client.AcceptTransfer(sk2, TransferProposal(sk2, []byte("alice"), profile2)); err != ErrNotAuthorized {
+	if err := client.AcceptTransfer(sk2, TransferProposal(sk2, "alice", profile2)); err != ErrNotAuthorized {
 		t.Error(err)
 	}
 }
@@ -448,7 +447,7 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 func TestServerFrontendExpiration(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
-	name := []byte("alice")
+	name := "alice"
 	client, err := NewClient(cfg, nil, testing_tls_config)
 	if err != nil {
 		t.Fatal(err)
@@ -482,7 +481,7 @@ func TestServerFrontendExpiration(t *testing.T) {
 func TestServerFrontendRegisterBadExpiration(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
-	name := []byte("alice")
+	name := "alice"
 	profile, sk, err := NewProfile(nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -492,11 +491,11 @@ func TestServerFrontendRegisterBadExpiration(t *testing.T) {
 		t.Fatal(err)
 	}
 	*profile.ExpirationTime = 0
-	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != ErrNotAuthorized {
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != ErrNotAuthorized {
 		t.Error(err)
 	}
 	*profile.ExpirationTime = 1 << 62
-	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != ErrNotAuthorized {
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != ErrNotAuthorized {
 		t.Error(err)
 	}
 }
@@ -518,13 +517,13 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 	}
 	for {
 		// wait until the server is up
-		_, err := client.Lookup(nil)
+		_, err := client.Lookup("")
 		if err == ErrCouldntVerify {
 			break
 		}
 	}
-	alice := []byte("alice")
-	bob := []byte("bob")
+	alice := "alice"
+	bob := "bob"
 	bad := [17]byte{'b', 'a', 'd'}
 	err = client.Register(sk, alice, profile, bad[:])
 	if err != ErrInviteInvalid {
@@ -559,7 +558,7 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 		t.Errorf("used invite; lookup reply: %v (error: %v)", lookupProfile, err)
 	}
 	servers[0].frontend.inviteMacKey = nil
-	ted := []byte("ted")
+	ted := "ted"
 	err = client.Register(sk, ted, profile, testutil.MakeToken())
 	if err != ErrRegistrationDisabled {
 		t.Error(err)
@@ -574,7 +573,7 @@ func TestServerVerifierSigns(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 1, 0)
 	defer teardown()
 	profile, sk, err := NewProfile(nil, nil)
-	name := []byte("alice")
+	name := "alice"
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -584,18 +583,18 @@ func TestServerVerifierSigns(t *testing.T) {
 	}
 	for {
 		// wait until the server is up
-		_, err := client.Lookup(nil)
+		_, err := client.Lookup("")
 		if err == ErrCouldntVerify {
 			break
 		}
 		runtime.Gosched()
 	}
-	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	var lookupProfile *Profile
 	for {
-		lookupProfile, err = client.Lookup([]byte(name))
+		lookupProfile, err = client.Lookup(name)
 		if err != ErrCouldntVerify {
 			break
 		}
@@ -631,7 +630,7 @@ func TestServerVerifierWaits(t *testing.T) {
 
 	// wait until the server is up
 	for {
-		_, err := coreClient.Lookup(nil)
+		_, err := coreClient.Lookup("")
 		if err == ErrCouldntVerify {
 			break
 		}
@@ -639,19 +638,19 @@ func TestServerVerifierWaits(t *testing.T) {
 	}
 
 	// do a profile update to make sure verifier has fully initialized.
-	if err := coreClient.Register(sk, []byte("bob"), profile, testutil.MakeToken()); err != nil {
+	if err := coreClient.Register(sk, "bob", profile, testutil.MakeToken()); err != nil {
 		t.Fatal(err)
 	}
 	for {
-		_, err := verifierClient.Lookup([]byte("bob"))
+		_, err := verifierClient.Lookup("bob")
 		if err == nil {
 			break
 		}
 		runtime.Gosched()
 	}
 
-	name := []byte("alice")
-	if err := coreClient.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
+	name := "alice"
+	if err := coreClient.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Fatal(err)
 	}
 	// Lookup through the verifier, requiring both signatures
@@ -659,7 +658,7 @@ func TestServerVerifierWaits(t *testing.T) {
 	// should not switch to the new root without 2 signatures
 	var lookupProfile *Profile
 	for {
-		lookupProfile, err = verifierClient.Lookup([]byte(name))
+		lookupProfile, err = verifierClient.Lookup(name)
 		if err != nil {
 			t.Error(err)
 		}
@@ -684,7 +683,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 		t.Fatalf("Could not delete core server from client config")
 	}
 	profile, sk, err := NewProfile(nil, nil)
-	name := []byte("alice")
+	name := "alice"
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -694,7 +693,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	}
 	for {
 		// wait until the server is up
-		_, err := client.Lookup(nil)
+		_, err := client.Lookup("")
 		if err == ErrCouldntVerify {
 			break
 		}
@@ -707,7 +706,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Register(sk, []byte(name), profile, testutil.MakeToken()); err != nil {
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	delete(cfg.Server, serverAddr)
@@ -720,7 +719,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	}
 	var lookupProfile *Profile
 	for {
-		lookupProfile, err = client.Lookup([]byte(name))
+		lookupProfile, err = client.Lookup(name)
 		if err != ErrCouldntVerify {
 			break
 		}
@@ -755,7 +754,7 @@ func BenchmarkServerOneServer(b *testing.B) {
 	}
 	rqs := make([]*ClientMessage, b.N)
 	for i := 0; i < b.N; i++ {
-		rqs[i] = &ClientMessage{ModifyProfile: NewSign(sk, MakeOperation([]byte(fmt.Sprint(i)), profile)), InviteCode: testutil.MakeToken()}
+		rqs[i] = &ClientMessage{ModifyProfile: NewSign(sk, MakeOperation(fmt.Sprint(i), profile)), InviteCode: testutil.MakeToken()}
 	}
 	b.StartTimer()
 	wg.Add(b.N)
