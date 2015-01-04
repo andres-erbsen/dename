@@ -76,6 +76,17 @@ Add a `gpg` key to the profile (by fingerprint, the key itself is too big):
 
 	dnmgr set bob pgp "$(gpg --fingerprint -K $KEYID | grep -im1 fingerprint\ = | tr -dc A-F0-9)"
 
+#### Back up `~/.config/dename`
+
+Each `dename` name is controlled by a secret key, which `dnmgr` by default
+stores in `~/.config/dename`. You probably want to back it up somewhere safe (as
+the secret key is just 64 bytes, I would recommend printing it out, both in hex
+and QR code format). There is no way to modify a profile without having the
+corresponding key. This is so because we (the `dename` server operators) would
+not have any way of proving to the world that the correct user actually
+contacted us and asked us to recover their name (as opposed to a third party
+compelling us to do so).
+
 ### Scripts
 
 `dngpg` performs arbitrary `gpg` commands with a `dename` user's public key as
