@@ -25,16 +25,16 @@ import (
 )
 
 var fieldByName = map[string]int32{
-	"ssh-host": 21,    // a line for .ssh/known_hosts
-	"ssh":      22,    // first to two space-separated fields for .ssh/authorzed_keys
-	"email":    25,    // an email address
-	"dns":      25,    // a domain name
-	"http":     80,    // a http:// or https:// url
+	"ssh-host": 21,    // lines for .ssh/known_hosts
+	"ssh":      22,    // first two space-separated fields for .ssh/authorzed_keys
+	"email":    25,    // email address
+	"dns":      25,    // domain name
+	"http":     80,    // http:// or https:// url
 	"web":      80,    // ^
-	"xmpp":     5222,  // a XMPP address
+	"xmpp":     5222,  // XMPP address
 	"jabber":   5222,  // ^
-	"otr":      5223,  // 20 bytes: OTR fingerprint
-	"pgp":      11371, // 20 bytes: an OpenPGP key fingerprint
+	"otr":      5223,  // 40 bytes: hex-encoded OTR fingerprint without spaces
+	"pgp":      11371, // 40 bytes: hex-encoded OpenPGP key fingerprint without spaces
 	"gpg":      11371, // ^
 	"openpgp":  11371, // ^
 }
