@@ -34,6 +34,8 @@ inconvenient.
 
 	go get github.com/andres-erbsen/dename/{dnmgr/dnmgr,dnmlookup}
 
+This requires the [`go` language toolchain](http://golang.org/).
+
 ### Command line
 
 Authorize *Alice* to control the current machine using `ssh`:
@@ -55,6 +57,10 @@ Encrypt a message so that only *Alice* can read it:
 Verify a message *Alice* signed using [`signify`]:
 
 	signify -V -e -p <(dnmlookup alice 9881561) -s signed-message -m verified-message
+
+Display all fields in a profile (using [protoc](https://github.com/google/protobuf/#protocol-buffers---googles-data-interchange-format)):
+
+	dnmlookup andres | protoc --decode_raw
 
 ### Management
 
