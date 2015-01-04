@@ -65,7 +65,7 @@ func main() {
 		if len(args) == 2 || len(args) == 3 {
 			name, fieldName = args[0], args[1]
 			if len(args) == 3 {
-				value = []byte(args[3])
+				value = []byte(args[2])
 			}
 		} else {
 			usageAndExit()
