@@ -102,12 +102,16 @@ func (c *Client) Lookup(name string) (profile *Profile, err error) {
 		}
 		if profileBs == nil {
 			profile = nil
-		} else {
-			profile = new(Profile)
-			err = proto.Unmarshal(profileBs, profile)
-			if err != nil {
-				return true, err
-			}
+			return true, nil
+		}
+		profile = new(Profile)
+		err = proto.Unmarshal(profileBs, profile)
+		if err != nil {
+			return true, err
+		}
+		expirationTime := time.Unix(int64(*profile.ExpirationTime), 0)
+		if expirationTime.Before(time.Now().Add(MAX_VALIDITY_PERIOD * time.Second / 2)) {
+			return true, fmt.Errorf("the profile is out of date and will be erased completely on %s", expirationTime)
 		}
 		return true, nil
 	})
