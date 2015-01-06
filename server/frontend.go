@@ -73,16 +73,16 @@ func (fe *frontend) listenForClients(ln net.Listener) {
 		go func(conn net.Conn) {
 			err := readHandleLoop(conn, 4<<10, fe.handleClient, fe.stop)
 			if err != nil && err != io.EOF {
-				log.Printf("frontend read on %v: %v", conn.RemoteAddr(), err)
+				log.Printf("frontend on %v: %v", conn.RemoteAddr(), err)
 			}
 			fe.waitStop.Done()
 		}(conn)
 	}
 }
 
-func (fe *frontend) handleClient(msg []byte, conn net.Conn) {
+func (fe *frontend) handleClient(msg []byte, conn net.Conn) (err error) {
 	rq := new(ClientMessage)
-	err := proto.Unmarshal(Unpad(msg), rq)
+	err = proto.Unmarshal(Unpad(msg), rq)
 	if err != nil {
 		conn.Close()
 		return
@@ -97,6 +97,7 @@ func (fe *frontend) handleClient(msg []byte, conn net.Conn) {
 		conn.Close()
 		return
 	}
+	return nil
 }
 
 func (fe *frontend) handleRequest(rq *ClientMessage) (reply *ClientReply) {

@@ -28,7 +28,7 @@ import (
 
 type backNet struct {
 	servers map[uint64]*ServerInfo
-	handler func([]byte, net.Conn)
+	handler func([]byte, net.Conn) error
 
 	sync.RWMutex
 	subscribers map[net.Conn]struct{}
@@ -63,13 +63,13 @@ func (b *backNet) listenBackend(ln net.Listener) error {
 		}
 		b.waitStop.Add(1)
 		go func(conn net.Conn) {
-			log.Printf("read on %v: %v", conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
+			log.Printf("backnet on %v: %v", conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
 			b.waitStop.Done()
 		}(conn)
 	}
 }
 
-func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn), stop chan struct{}) error {
+func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn) error, stop chan struct{}) error {
 	defer conn.Close()
 	go func() {
 		<-stop
@@ -100,7 +100,9 @@ func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn), 
 				return err
 			}
 		}
-		handler(buf, conn)
+		if err = handler(buf, conn); err != nil {
+			return err
+		}
 	}
 }
 
@@ -136,7 +138,7 @@ func (b *backNet) SendToServer(id uint64, msg *BackendMessage) {
 			server.conn = conn
 			b.waitStop.Add(1)
 			go func(conn net.Conn) {
-				log.Printf("read on %x (%v): %v", id, conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
+				log.Printf("backnet send on %x (%v): %v", id, conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
 				b.waitStop.Done()
 			}(conn)
 		} else {

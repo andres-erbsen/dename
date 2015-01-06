@@ -51,17 +51,16 @@ type communicator struct {
 	id            uint64
 }
 
-func (c *communicator) OnMessage(buf []byte, conn net.Conn) {
+func (c *communicator) OnMessage(buf []byte, conn net.Conn) (err error) {
 	request := new(BackendMessage)
-	err := proto.Unmarshal(buf, request)
-	if err != nil {
+	if err = proto.Unmarshal(buf, request); err != nil {
 		log.Printf("protodecode BackendMessage from %v: %v", conn.RemoteAddr(), err)
 		conn.Close()
 		return
 	}
 	if smsg := request.SignedServerMessage; smsg != nil {
 		msg := new(Message)
-		err := proto.Unmarshal(smsg.Message, &msg.SignedServerMessage_ServerMessage)
+		err = proto.Unmarshal(smsg.Message, &msg.SignedServerMessage_ServerMessage)
 		if err != nil {
 			log.Printf("protodecode ServerMessage from %v: %v", conn.RemoteAddr(), err)
 			conn.Close()
@@ -74,7 +73,7 @@ func (c *communicator) OnMessage(buf []byte, conn net.Conn) {
 		}
 		server, ok := c.servers[*msg.Server]
 		if !ok {
-			log.Printf("Message from unknown server %x", *msg.Server)
+			// log.Printf("Message from unknown server %x", *msg.Server)
 			return
 		}
 		err = server.VerifySignature("msg", smsg.Message, smsg.Signature)
@@ -101,6 +100,7 @@ func (c *communicator) OnMessage(buf []byte, conn net.Conn) {
 	if request.GetSubscribe() {
 		c.subscribers.AddSubscriber(conn)
 	}
+	return nil
 }
 
 var errStop = fmt.Errorf("Shutting down")
