@@ -53,7 +53,8 @@ func main() {
 		}
 		profile, sk, err := client.NewProfile(nil, nil)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "creating a new profile failed: %s\n", err);
+			os.Exit(1)
 		}
 		if err := dnmgr.Register(sk, profile, name, invite, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "registration failed: %s\n", err)
