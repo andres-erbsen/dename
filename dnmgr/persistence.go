@@ -92,11 +92,13 @@ func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, e
 	sk = new([64]byte)
 	if skData, err := ioutil.ReadFile(filepath.Join(path, "sk")); err != nil {
 		return nil, nil, err
-	} else if len(skData) != 64 {
-		return nil, nil, fmt.Errorf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
-	} else {
-		copy(sk[:], skData)
 	}
+	if len(skData) != 64 {
+		return nil, nil, fmt.Errorf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
+	}
+
+	copy(sk[:], skData)
+
 	profileData, err := ioutil.ReadFile(filepath.Join(path, "profile"))
 	if err != nil {
 		return
