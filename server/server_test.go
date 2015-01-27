@@ -17,7 +17,6 @@ package server
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
@@ -37,18 +36,6 @@ import (
 	"testing"
 	"time"
 )
-
-var testing_tls_config *tls.Config
-var testing_ca *testutil.TestingCA
-
-func init() {
-	var err error
-	testing_ca, err = testutil.NewTestingCA(nil)
-	if err != nil {
-		panic(err)
-	}
-	testing_tls_config = testing_ca.Config
-}
 
 type testNet struct {
 	servers    map[uint64]*server
@@ -320,7 +307,7 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +334,7 @@ func TestServerProofOfAbsence(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 2, 0, 0)
 	defer teardown()
 	frontendRoundTrip(t, cfg, "alice")
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,7 +370,7 @@ func TestServerNilNameProofOfAbsence(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 2, 0, 0)
 	defer teardown()
 	frontendRoundTrip(t, cfg, "alice")
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,7 +402,7 @@ func TestServerFrontendTransfer(t *testing.T) {
 	}
 	profile2.Version = new(uint64)
 	*profile2.Version = 2
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -432,7 +419,7 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -448,7 +435,7 @@ func TestServerFrontendExpiration(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
 	name := "alice"
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,7 +473,7 @@ func TestServerFrontendRegisterBadExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +498,7 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -577,7 +564,7 @@ func TestServerVerifierSigns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -616,14 +603,14 @@ func TestServerVerifierWaits(t *testing.T) {
 
 	verifier := cfg.Server["127.0.0.1:1441"]
 	delete(cfg.Server, "127.0.0.1:1441")
-	coreClient, err := NewClient(cfg, nil, testing_tls_config)
+	coreClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.Server["127.0.0.1:1441"] = verifier
 	cfg.Server["unreachable"] = cfg.Server["127.0.0.1:1440"]
 	delete(cfg.Server, "127.0.0.1:1440")
-	verifierClient, err := NewClient(cfg, nil, testing_tls_config)
+	verifierClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -687,7 +674,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client, err := NewClient(cfg, nil, testing_tls_config)
+	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -702,7 +689,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	if len(cfg.Server) != 2 {
 		t.Fatalf("Could not add core server to client config")
 	}
-	client, err = NewClient(cfg, nil, testing_tls_config)
+	client, err = NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -713,7 +700,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	if len(cfg.Server) != 1 {
 		t.Fatalf("Could not delete core server from client config")
 	}
-	client, err = NewClient(cfg, nil, testing_tls_config)
+	client, err = NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

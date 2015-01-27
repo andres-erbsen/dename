@@ -16,7 +16,6 @@ package server
 
 import (
 	"code.google.com/p/gcfg"
-	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"github.com/agl/ed25519"
@@ -25,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 )
 
 type ServerConfig struct {
@@ -35,10 +35,9 @@ type ServerConfig struct {
 		ConsensusThreshold int
 	}
 	Frontend struct {
-		Listen        string // address:port
-		TLSCertPath   string
-		TLSKeyPath    string
-		InviteKeyPath string
+		Listen           string // address:port
+		TransportKeyPath string
+		InviteKeyPath    string
 	}
 	Server map[string]*struct { // back-end address
 		PublicKey string // base64 encoded
@@ -131,17 +130,32 @@ func StartFromConfig(cfg *ServerConfig) *server {
 		go backnet.listenBackend(ln)
 	}
 	if cfg.Frontend.Listen != "" {
-		server.waitStop.Add(1)
-		cert, err := tls.LoadX509KeyPair(cfg.Frontend.TLSCertPath, cfg.Frontend.TLSKeyPath)
+		var sk [32]byte
+		skFile, err := os.Stat(cfg.Frontend.TransportKeyPath)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("cannot stat secret key file (%s): %s", cfg.Frontend.TransportKeyPath, err)
 		}
-		config := tls.Config{Certificates: []tls.Certificate{cert}}
-		ln, err := tls.Listen("tcp", cfg.Frontend.Listen, &config)
+		if !skFile.Mode().IsRegular() {
+			log.Fatalf("%s is not a regular file", skFile.Name())
+		}
+		if skFile.Mode().Perm()&077 != 0 {
+			log.Fatalf("%s is unprotected", skFile.Name())
+		}
+		skData, err := ioutil.ReadFile(cfg.Frontend.TransportKeyPath)
+		if err != nil {
+			log.Fatalf("read transport secret key: %s", err)
+		}
+		if len(skData) != 32 {
+			log.Fatalf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
+		}
+		copy(sk[:], skData)
+
+		ln, err := net.Listen("tcp", cfg.Frontend.Listen)
 		if err != nil {
 			log.Fatalf("server: listen: %s", err)
 		}
-		go server.frontend.listenForClients(ln)
+		server.waitStop.Add(1)
+		go server.frontend.listenForClients(ln, &sk)
 	}
 	return server
 }

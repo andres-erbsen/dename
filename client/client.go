@@ -17,11 +17,9 @@ package client
 import (
 	"bytes"
 	"code.google.com/p/go.net/proxy"
-	_ "crypto/sha512" // for tls
-	"crypto/tls"
-	"encoding/binary"
 	"fmt"
 	"github.com/agl/ed25519"
+	"github.com/andres-erbsen/chatterbox/transport"
 	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/gogo/protobuf/proto"
 	"io"
@@ -33,10 +31,10 @@ var true_ = true
 var pad_to uint64 = 4 << 10
 
 type serverInfo struct {
-	pk        *Profile_PublicKey
-	address   string
-	timeout   time.Duration
-	tlsConfig *tls.Config
+	pk          *Profile_PublicKey
+	address     string
+	timeout     time.Duration
+	transportPK *[32]byte
 }
 
 type Client struct {
@@ -45,23 +43,28 @@ type Client struct {
 	consensusNumConfirmations int
 	dialer                    proxy.Dialer
 	servers                   map[uint64]*serverInfo
+	now                       func() time.Time
 }
 
-func (c *Client) connect(s *serverInfo) (net.Conn, error) {
+func (c *Client) connect(s *serverInfo) (*transport.Conn, error) {
 	var plainconn net.Conn
 	plainconn, err := c.dialer.Dial("tcp", s.address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dial %s: %s", s.address, err)
 	}
-	conn := tls.Client(plainconn, s.tlsConfig)
-	conn.SetDeadline(time.Now().Add(s.timeout))
-	return conn, conn.Handshake()
+	plainconn.SetDeadline(time.Now().Add(s.timeout))
+	conn, _, err := transport.Handshake(plainconn, nil, nil, s.transportPK, 1<<12)
+	if err != nil {
+		plainconn.Close()
+		return nil, fmt.Errorf("transport handshake %s: %s", s.address, err)
+	}
+	return conn, nil
 }
 
-func (c *Client) atSomeServer(f func(net.Conn) (bool, error)) (err error) {
+func (c *Client) atSomeServer(f func(*transport.Conn) (bool, error)) (err error) {
 next_server:
 	for _, server := range c.servers {
-		var conn net.Conn
+		var conn *transport.Conn
 		conn, err = c.connect(server)
 		if err != nil {
 			continue next_server
@@ -82,9 +85,9 @@ next_server:
 // servers have confirmed the correctness of the (name, profile) mapping and
 // that Freshness.NumConfirmations have done this within Freshness.Threshold.
 func (c *Client) Lookup(name string) (profile *Profile, err error) {
-	err = c.atSomeServer(func(conn net.Conn) (bool, error) {
+	err = c.atSomeServer(func(conn *transport.Conn) (bool, error) {
 		rq := &ClientMessage{PeekState: &true_, ResolveName: []byte(name), PadReplyTo: &pad_to}
-		if _, err = conn.Write(Frame(Pad(PBEncode(rq), 256))); err != nil {
+		if _, err = conn.WriteFrame(Pad(PBEncode(rq), 256)); err != nil {
 			return false, err
 		}
 		var reply *ClientReply
@@ -130,9 +133,9 @@ var (
 // operation at any known server. You probably want to use Register, Modify or
 // Transfer instead.
 func (c *Client) Enact(op *SignedProfileOperation, invite []byte) (err error) {
-	err = c.atSomeServer(func(conn net.Conn) (bool, error) {
+	err = c.atSomeServer(func(conn *transport.Conn) (bool, error) {
 		msg := &ClientMessage{ModifyProfile: op, InviteCode: invite}
-		_, err = conn.Write(Frame(Pad(PBEncode(msg), 4<<10)))
+		_, err = conn.WriteFrame(Pad(PBEncode(msg), int(pad_to)))
 		if err != nil {
 			return false, err
 		}
@@ -167,21 +170,14 @@ func (r byteReader) ReadByte() (byte, error) {
 	return ret[0], err
 }
 
-func readReply(conn net.Conn) (reply *ClientReply, err error) {
-	var size uint64
-	size, err = binary.ReadUvarint(byteReader{conn})
+func readReply(conn *transport.Conn) (reply *ClientReply, err error) {
+	buf := make([]byte, pad_to)
+	sz, err := conn.ReadFrame(buf)
 	if err != nil {
 		return
 	}
-	if size > 5<<10 {
-		return nil, fmt.Errorf("reply too big")
-	}
-	buf := make([]byte, size)
-	if _, err = io.ReadFull(conn, buf); err != nil {
-		return
-	}
 	reply = new(ClientReply)
-	err = proto.Unmarshal(Unpad(buf), reply)
+	err = proto.Unmarshal(Unpad(buf[:sz]), reply)
 	return
 }
 
@@ -268,7 +264,7 @@ func (c *Client) VerifyConsensus(signedHashOfStateMsgs []*SignedServerMessage) (
 			return nil, fmt.Errorf("verifyConsensus: state hashes differ")
 		}
 		consensusServers[*msg.Server] = struct{}{}
-		if !time.Unix(int64(*msg.Time), 0).Add(c.freshnessThreshold).After(server.tlsConfig.Time()) {
+		if !time.Unix(int64(*msg.Time), 0).Add(c.freshnessThreshold).After(c.now()) {
 			continue
 		}
 		freshnessServers[*msg.Server] = struct{}{}

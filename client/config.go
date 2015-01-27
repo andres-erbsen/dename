@@ -16,20 +16,17 @@ package client
 
 import (
 	"code.google.com/p/go.net/proxy"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/base64"
+	"fmt"
 	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/gogo/protobuf/proto"
-	"io/ioutil"
-	"strings"
 	"time"
 )
 
 type Server struct {
-	PublicKey   string
-	Timeout     string
-	TLSCertFile string
+	PublicKey          string
+	Timeout            string
+	TransportPublicKey string
 }
 type Freshness struct {
 	Threshold        string
@@ -40,7 +37,7 @@ type Config struct {
 	Server    map[string]*Server
 }
 
-func NewClient(cfg *Config, dialer proxy.Dialer, tlsConfig *tls.Config) (c *Client, err error) {
+func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Client, err error) {
 	if cfg == nil {
 		cfg = &DefaultConfig
 	}
@@ -49,15 +46,10 @@ func NewClient(cfg *Config, dialer proxy.Dialer, tlsConfig *tls.Config) (c *Clie
 	if err != nil {
 		return nil, err
 	}
-	if tlsConfig == nil {
-		tlsConfig = new(tls.Config)
+	if now == nil {
+		now = time.Now
 	}
-	if tlsConfig.Time == nil {
-		tlsConfig.Time = time.Now
-	}
-	if tlsConfig.MinVersion == 0 {
-		tlsConfig.MinVersion = tls.VersionTLS12
-	}
+	c.now = now
 	c.freshnessNumConfirmations = cfg.Freshness.NumConfirmations
 	c.servers = make(map[uint64]*serverInfo)
 	for address, server := range cfg.Server {
@@ -76,18 +68,19 @@ func NewClient(cfg *Config, dialer proxy.Dialer, tlsConfig *tls.Config) (c *Clie
 		if err != nil {
 			return nil, err
 		}
-		serverTLSConfig := *tlsConfig
-		serverTLSConfig.ServerName = strings.Split(address, ":")[0]
-		if server.TLSCertFile != "" {
-			certPEM, err := ioutil.ReadFile(server.TLSCertFile)
+		var transportPK *[32]byte
+		if server.TransportPublicKey != "" {
+			transportPkData, err := base64.StdEncoding.DecodeString(server.TransportPublicKey)
 			if err != nil {
 				return nil, err
 			}
-			serverTLSConfig.RootCAs = x509.NewCertPool()
-			serverTLSConfig.RootCAs.AppendCertsFromPEM(certPEM)
-			// TODO: allow certificates with the CA bit not set
+			if len(transportPkData) != 32 {
+				return nil, fmt.Errorf("malformed transport public key for server \"%s\" (expected %d bytes, got %d)", address, 32, len(transportPkData))
+			}
+			transportPK := new([32]byte)
+			copy(transportPK[:], transportPkData)
 		}
-		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, tlsConfig: &serverTLSConfig}
+		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, transportPK: transportPK}
 	}
 	c.consensusNumConfirmations = len(cfg.Server)
 	if dialer == nil {

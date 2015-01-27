@@ -19,9 +19,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"github.com/andres-erbsen/chatterbox/transport"
 	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
+	"golang.org/x/crypto/curve25519"
 	"io"
 	"log"
 	"net"
@@ -51,7 +53,9 @@ func NewFrontend(inviteMacKey []byte) *frontend {
 }
 
 // caller MUST call fe.waitStop.Add(1) first
-func (fe *frontend) listenForClients(ln net.Listener) {
+func (fe *frontend) listenForClients(ln net.Listener, sk *[32]byte) {
+	var pk [32]byte
+	curve25519.ScalarBaseMult(&pk, sk)
 	defer fe.waitStop.Done()
 	defer ln.Close()
 	go func() {
@@ -60,27 +64,55 @@ func (fe *frontend) listenForClients(ln net.Listener) {
 	}()
 	for {
 		conn, err := ln.Accept()
-		select {
-		case <-fe.stop:
-			return
-		default:
-			if err != nil {
+		if err != nil {
+			select {
+			case <-fe.stop:
+				return
+			default:
 				log.Printf("accept client: %s", err)
 				continue
 			}
 		}
 		fe.waitStop.Add(1)
-		go func(conn net.Conn) {
-			err := readHandleLoop(conn, 4<<10, fe.handleClient, fe.stop)
-			if err != nil && err != io.EOF {
-				log.Printf("frontend on %v: %v", conn.RemoteAddr(), err)
+		go func(plainconn net.Conn) {
+			defer fe.waitStop.Done()
+			conn, _, err := transport.Handshake(conn, &pk, sk, nil, 4<<10)
+			if err != nil {
+				log.Printf("frontend handshake on %v: %v", plainconn.RemoteAddr(), err)
 			}
-			fe.waitStop.Done()
+			err = frontendLoop(conn, 4<<10, fe.handleClient, fe.stop)
+			if err != nil && err != io.EOF {
+				log.Printf("frontend on %v: %v", plainconn.RemoteAddr(), err)
+			}
 		}(conn)
 	}
 }
 
-func (fe *frontend) handleClient(msg []byte, conn net.Conn) (err error) {
+func frontendLoop(conn *transport.Conn, maxSize int, handler func([]byte, *transport.Conn) error, stop chan struct{}) error {
+	defer conn.Close()
+	go func() {
+		<-stop
+		conn.Close()
+	}()
+	buf := make([]byte, maxSize)
+	for {
+		conn.SetDeadline(time.Now().Add(5 * time.Second))
+		sz, err := conn.ReadFrame(buf)
+		if err != nil {
+			select {
+			case <-stop:
+				return errStop
+			default:
+				return err
+			}
+		}
+		if err = handler(buf[:sz], conn); err != nil {
+			return err
+		}
+	}
+}
+
+func (fe *frontend) handleClient(msg []byte, conn *transport.Conn) (err error) {
 	rq := new(ClientMessage)
 	err = proto.Unmarshal(Unpad(msg), rq)
 	if err != nil {
@@ -92,7 +124,7 @@ func (fe *frontend) handleClient(msg []byte, conn net.Conn) (err error) {
 		conn.Close()
 		return
 	}
-	_, err = conn.Write(Frame(Pad(PBEncode(fe.handleRequest(rq)), padTo)))
+	_, err = conn.WriteFrame(Pad(PBEncode(fe.handleRequest(rq)), padTo))
 	if err != nil {
 		conn.Close()
 		return
