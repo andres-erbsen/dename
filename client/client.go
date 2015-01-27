@@ -85,40 +85,51 @@ next_server:
 // servers have confirmed the correctness of the (name, profile) mapping and
 // that Freshness.NumConfirmations have done this within Freshness.Threshold.
 func (c *Client) Lookup(name string) (profile *Profile, err error) {
+	profile, _, err = c.LookupReply(name)
+	return
+}
+
+func (c *Client) LookupReply(name string) (profile *Profile, reply *ClientReply, err error) {
 	err = c.atSomeServer(func(conn *transport.Conn) (bool, error) {
 		rq := &ClientMessage{PeekState: &true_, ResolveName: []byte(name), PadReplyTo: &pad_to}
 		if _, err = conn.WriteFrame(Pad(PBEncode(rq), 256)); err != nil {
 			return false, err
 		}
-		var reply *ClientReply
 		if reply, err = readReply(conn); err != nil {
 			return false, err
 		}
-		var root []byte
-		root, err = c.VerifyConsensus(reply.StateConfirmations)
-		if err != nil {
-			return true, ErrCouldntVerify
-		}
-		profileBs, err := VerifyResolveAgainstRoot(root, name, reply.LookupNodes)
-		if err != nil {
-			return true, ErrCouldntVerify
-		}
-		if profileBs == nil {
-			profile = nil
-			return true, nil
-		}
-		profile = new(Profile)
-		err = proto.Unmarshal(profileBs, profile)
-		if err != nil {
+		if profile, err = c.LookupFromReply(name, reply); err != nil {
 			return true, err
-		}
-		expirationTime := time.Unix(int64(*profile.ExpirationTime), 0)
-		if expirationTime.Before(time.Now().Add(MAX_VALIDITY_PERIOD * time.Second / 2)) {
-			return true, fmt.Errorf("the profile is out of date and will be erased completely on %s", expirationTime)
 		}
 		return true, nil
 	})
 	return
+}
+
+func (c *Client) LookupFromReply(name string, reply *ClientReply) (profile *Profile, err error) {
+	var root []byte
+	root, err = c.VerifyConsensus(reply.StateConfirmations)
+	if err != nil {
+		return
+	}
+	profileBs, err := VerifyResolveAgainstRoot(root, name, reply.LookupNodes)
+	if err != nil {
+		return
+	}
+	if profileBs == nil {
+		profile = nil
+		return
+	}
+	profile = new(Profile)
+	err = proto.Unmarshal(profileBs, profile)
+	if err != nil {
+		return nil, err
+	}
+	expirationTime := time.Unix(int64(*profile.ExpirationTime), 0)
+	if expirationTime.Before(time.Now().Add(MAX_VALIDITY_PERIOD * time.Second / 2)) {
+		return nil, fmt.Errorf("the profile is out of date and will be erased completely on %s", expirationTime)
+	}
+	return profile, nil
 }
 
 var (
