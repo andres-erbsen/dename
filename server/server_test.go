@@ -308,6 +308,16 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	if err != nil {
 		t.Fatal(err)
 	}
+	cfgServerSingle := make(map[string]*Server)
+	for k, v := range cfg.Server {
+		cfgServerSingle[k] = v
+		break
+	}
+	cfgServerBackup := cfg.Server
+	cfg.Server = cfgServerSingle
+	defer func() {
+		cfg.Server = cfgServerBackup
+	}()
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
