@@ -90,14 +90,36 @@ func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, e
 		return
 	}
 	sk = new([64]byte)
-	if skData, err := ioutil.ReadFile(filepath.Join(path, "sk")); err != nil {
+	infSk,err := os.Stat(filepath.Join(path, "sk"))
+	if err != nil {
 		return nil, nil, err
-	} else if len(skData) != 64 {
-		return nil, nil, fmt.Errorf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
-	} else {
-		copy(sk[:], skData)
 	}
-	profileData, err := ioutil.ReadFile(filepath.Join(path, "profile"))
+	if !infSk.Mode().IsRegular() {
+		return nil, nil, fmt.Errorf("%s is not a regular file", infSk.Name())
+	}
+	if infSk.Mode().Perm()&077 != 0 {
+		return nil, nil, fmt.Errorf("%s is unprotected", infSk.Name())
+	}
+	skData, err := ioutil.ReadFile(filepath.Join(path, infSk.Name()))
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(skData) != 64 {
+		return nil, nil, fmt.Errorf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
+	}
+
+	copy(sk[:], skData)
+	infProfile,err := os.Stat(filepath.Join(path, "profile"))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !infProfile.Mode().IsRegular() {
+		return nil, nil, fmt.Errorf("%s is not a regular file", infProfile.Name())
+	}
+	if infProfile.Mode().Perm()&077 != 0 {
+		return nil, nil, fmt.Errorf("%s is unprotected", infProfile.Name())
+	}
+	profileData, err := ioutil.ReadFile(filepath.Join(path, infProfile.Name()))
 	if err != nil {
 		return
 	}

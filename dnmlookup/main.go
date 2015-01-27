@@ -39,8 +39,8 @@ func main() {
 		var err error
 		field, err = client.FieldByName(os.Args[2])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", os.Args[3], err)
-			os.Exit(2)
+			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", os.Args[2], err)
+			usageAndExit()
 		}
 	}
 
