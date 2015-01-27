@@ -108,12 +108,20 @@ func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn) e
 
 func (b *backNet) Broadcast(msg *BackendMessage) {
 	for id, _ := range b.servers {
-		go b.SendToServer(id, msg)
+               b.waitStop.Add(1)
+               go func(id uint64) {
+                       b.SendToServer(id, msg)
+                       b.waitStop.Done()
+               }(id)
 	}
 
 	b.RLock()
 	for conn := range b.subscribers {
-		go b.sendToSubscriber(conn, msg)
+               b.waitStop.Add(1)
+               go func(conn net.Conn) {
+                       b.sendToSubscriber(conn, msg)
+                       b.waitStop.Done()
+               }(conn)
 	}
 	b.RUnlock()
 }
