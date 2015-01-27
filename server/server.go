@@ -175,7 +175,6 @@ func (server *server) Run() {
 		merklemap := OpenMerkleMap(server.db)
 		for _, op := range profileOperations {
 			name, profileData, err := validateOperation(merklemap, op, operationsTime)
-			// log.Printf("server %x round %d operation %d name \"%s\": %v", server.id, roundNumber, i, name, err)
 			if err != nil {
 				continue
 			}
@@ -190,7 +189,7 @@ func (server *server) Run() {
 			panic(err)
 		}
 		server.frontend.DoneWith(profileOperations)
-		// fmt.Printf("%x # %d operations (%d) time %v state %x\n", server.id, roundNumber, len(profileOperations), time.Unix(int64(operationsTime), 0), merklemap.GetRootHash())
+		fmt.Printf("server %x round %d #operations %d time %v state %x\n", server.id, roundNumber, len(profileOperations), time.Unix(int64(operationsTime), 0), merklemap.GetRootHash())
 	}
 }
 

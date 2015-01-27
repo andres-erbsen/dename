@@ -473,6 +473,7 @@ func TestServerFrontendExpiration(t *testing.T) {
 		} else if err != ErrNotAuthorized {
 			t.Error(err)
 		}
+		runtime.Gosched()
 	}
 }
 
@@ -652,17 +653,25 @@ func TestServerSubscriberSigns(t *testing.T) {
 	serverAddr := "127.0.0.1:1440"
 	subscriberAddr := "127.0.0.1:1441"
 	serverPK := cfg.Server[serverAddr]
-	profile, sk, err := NewProfile(nil, nil)
+	subscriberPK := cfg.Server[subscriberAddr]
+	delete(cfg.Server, subscriberAddr)
+	if len(cfg.Server) != 1 {
+		t.Fatalf("Could not delete subscriber from client config")
+	}
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	name := "alice"
+	frontendRoundTrip(t, cfg, name)
+	profile, err := client.Lookup(name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
-		t.Error(err)
+
+	cfg.Server[subscriberAddr] = subscriberPK
+	if len(cfg.Server) != 2 {
+		t.Fatalf("Could not add subscriber to client config")
 	}
 	delete(cfg.Server, serverAddr)
 	if len(cfg.Server) != 1 {
@@ -673,16 +682,14 @@ func TestServerSubscriberSigns(t *testing.T) {
 		t.Fatal(err)
 	}
 	var lookupProfile *Profile
-	for {
+	for lookupProfile == nil {
 		lookupProfile, err = client.Lookup(name)
-		if lookupProfile != nil {
-			break
-		}
 		runtime.Gosched()
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
 	}
+
 	// close the subscriber, check that the main server can still continue
 	close(servers[1].stop)
 	servers[1].waitStop.Wait()
@@ -694,7 +701,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	}
 	delete(cfg.Server, subscriberAddr)
 	if len(cfg.Server) != 1 {
-		t.Fatalf("Could not delete subscriber from client config")
+		t.Fatalf("could not delete subscriber from client config")
 	}
 	frontendRoundTrip(t, cfg, "bob")
 }
