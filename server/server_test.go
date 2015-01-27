@@ -317,7 +317,7 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	}
 	lookupProfile, err := client.Lookup(name)
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
