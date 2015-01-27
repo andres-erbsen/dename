@@ -24,6 +24,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"golang.org/x/crypto/curve25519"
+	"io"
 	"log"
 	"net"
 	"sync"
@@ -107,7 +108,9 @@ func (fe *frontend) handleClient(plainconn net.Conn) {
 			case <-fe.stop:
 				return
 			default:
-				log.Printf("frontend read %v: %v", plainconn.RemoteAddr(), err)
+				if err != io.EOF {
+					log.Printf("frontend read %v: %v", plainconn.RemoteAddr(), err)
+				}
 				return
 			}
 		}
