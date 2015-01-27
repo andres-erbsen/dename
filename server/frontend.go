@@ -24,7 +24,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb"
 	"golang.org/x/crypto/curve25519"
-	"io"
 	"log"
 	"net"
 	"sync"
@@ -39,29 +38,32 @@ type frontend struct {
 	inviteMutex       sync.Mutex
 	profileOperations []*SignedProfileOperation
 	waitOps           map[string]chan struct{}
+	pk                [32]byte
+	sk                *[32]byte
 
 	stop     chan struct{}
 	waitStop *sync.WaitGroup
 }
 
-func NewFrontend(inviteMacKey []byte) *frontend {
-	return &frontend{
+func NewFrontend() *frontend {
+	fe := &frontend{
 		hasOperations: make(chan struct{}, 1),
-		inviteMacKey:  inviteMacKey,
 		waitOps:       make(map[string]chan struct{}),
 	}
+	return fe
 }
 
 // caller MUST call fe.waitStop.Add(1) first
 func (fe *frontend) listenForClients(ln net.Listener, sk *[32]byte) {
-	var pk [32]byte
-	curve25519.ScalarBaseMult(&pk, sk)
 	defer fe.waitStop.Done()
 	defer ln.Close()
 	go func() {
 		<-fe.stop
 		ln.Close()
 	}()
+
+	fe.sk = sk
+	curve25519.ScalarBaseMult(&fe.pk, sk)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -74,45 +76,49 @@ func (fe *frontend) listenForClients(ln net.Listener, sk *[32]byte) {
 			}
 		}
 		fe.waitStop.Add(1)
-		go func(plainconn net.Conn) {
-			defer fe.waitStop.Done()
-			conn, _, err := transport.Handshake(conn, &pk, sk, nil, 4<<10)
-			if err != nil {
-				log.Printf("frontend handshake on %v: %v", plainconn.RemoteAddr(), err)
-			}
-			err = frontendLoop(conn, 4<<10, fe.handleClient, fe.stop)
-			if err != nil && err != io.EOF {
-				log.Printf("frontend on %v: %v", plainconn.RemoteAddr(), err)
-			}
-		}(conn)
+		go fe.handleClient(conn)
 	}
 }
 
-func frontendLoop(conn *transport.Conn, maxSize int, handler func([]byte, *transport.Conn) error, stop chan struct{}) error {
-	defer conn.Close()
+func (fe *frontend) handleClient(plainconn net.Conn) {
+	defer plainconn.Close()
+	defer fe.waitStop.Done()
+	closed := make(chan struct{})
+	defer close(closed)
 	go func() {
-		<-stop
-		conn.Close()
+		select {
+		case <-fe.stop:
+			plainconn.Close()
+		case <-closed:
+		}
 	}()
-	buf := make([]byte, maxSize)
+	plainconn.SetDeadline(time.Now().Add(5 * time.Second))
+	conn, _, err := transport.Handshake(plainconn, &fe.pk, fe.sk, nil, 4<<10)
+	if err != nil {
+		log.Printf("frontend handshake on %v: %v", plainconn.RemoteAddr(), err)
+		return
+	}
+	buf := make([]byte, 4<<10)
 	for {
 		conn.SetDeadline(time.Now().Add(5 * time.Second))
 		sz, err := conn.ReadFrame(buf)
 		if err != nil {
 			select {
-			case <-stop:
-				return errStop
+			case <-fe.stop:
+				return
 			default:
-				return err
+				log.Printf("frontend read %v: %v", plainconn.RemoteAddr(), err)
+				return
 			}
 		}
-		if err = handler(buf[:sz], conn); err != nil {
-			return err
+		if err = fe.handleClientMessage(buf[:sz], conn); err != nil {
+			log.Printf("frontend handle %v: %v", plainconn.RemoteAddr(), err)
+			return
 		}
 	}
 }
 
-func (fe *frontend) handleClient(msg []byte, conn *transport.Conn) (err error) {
+func (fe *frontend) handleClientMessage(msg []byte, conn *transport.Conn) (err error) {
 	rq := new(ClientMessage)
 	err = proto.Unmarshal(Unpad(msg), rq)
 	if err != nil {

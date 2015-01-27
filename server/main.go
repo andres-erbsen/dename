@@ -60,10 +60,11 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 	if cfg.Frontend.InviteKeyPath != "" {
 		inviteKey, err = ioutil.ReadFile(cfg.Frontend.InviteKeyPath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("read invite key: %v:", err)
+			log.Fatalf("read invite key: %v:", err)
 		}
 	}
-	fe := NewFrontend(inviteKey)
+	fe := NewFrontend()
+	fe.inviteMacKey = inviteKey
 
 	comm := &communicator{servers: make(map[uint64]*ServerInfo)}
 	bn := &backNet{servers: comm.servers, handler: comm.OnMessage, subscribers: make(map[net.Conn]struct{})}

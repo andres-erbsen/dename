@@ -140,7 +140,8 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 		for _, id := range serverIDs {
 			comm.servers[id] = &ServerInfo{ID: id, Profile_PublicKey: pks[id], IsCore: true, messageBroker: &MessageBroker{serverID: id, servernet: net}}
 		}
-		fe := NewFrontend(testutil.INVITE_KEY)
+		fe := NewFrontend()
+		fe.inviteMacKey = testutil.INVITE_KEY
 		server, err := OpenServer(filepath.Join(dir, fmt.Sprintf("%x", id), "db"), sks[id], comm, fe, 0)
 		if err != nil {
 			panic(err)
@@ -316,7 +317,7 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	}
 	lookupProfile, err := client.Lookup(name)
 	if err != nil {
-		t.Error(err)
+		panic(err)
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
@@ -502,13 +503,6 @@ func TestServerFrontendChecksInvites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for {
-		// wait until the server is up
-		_, err := client.Lookup("")
-		if err == ErrCouldntVerify {
-			break
-		}
-	}
 	alice := "alice"
 	bob := "bob"
 	bad := [17]byte{'b', 'a', 'd'}
@@ -568,21 +562,13 @@ func TestServerVerifierSigns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for {
-		// wait until the server is up
-		_, err := client.Lookup("")
-		if err == ErrCouldntVerify {
-			break
-		}
-		runtime.Gosched()
-	}
 	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Error(err)
 	}
 	var lookupProfile *Profile
 	for {
 		lookupProfile, err = client.Lookup(name)
-		if err != ErrCouldntVerify {
+		if lookupProfile != nil {
 			break
 		}
 		runtime.Gosched()
@@ -613,15 +599,6 @@ func TestServerVerifierWaits(t *testing.T) {
 	verifierClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	// wait until the server is up
-	for {
-		_, err := coreClient.Lookup("")
-		if err == ErrCouldntVerify {
-			break
-		}
-		runtime.Gosched()
 	}
 
 	// do a profile update to make sure verifier has fully initialized.
@@ -665,31 +642,12 @@ func TestServerSubscriberSigns(t *testing.T) {
 	serverAddr := "127.0.0.1:1440"
 	subscriberAddr := "127.0.0.1:1441"
 	serverPK := cfg.Server[serverAddr]
-	delete(cfg.Server, serverAddr)
-	if len(cfg.Server) != 1 {
-		t.Fatalf("Could not delete core server from client config")
-	}
 	profile, sk, err := NewProfile(nil, nil)
-	name := "alice"
-	if err != nil {
-		t.Fatal(err)
-	}
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for {
-		// wait until the server is up
-		_, err := client.Lookup("")
-		if err == ErrCouldntVerify {
-			break
-		}
-	}
-	cfg.Server[serverAddr] = serverPK
-	if len(cfg.Server) != 2 {
-		t.Fatalf("Could not add core server to client config")
-	}
-	client, err = NewClient(cfg, nil, nil)
+	name := "alice"
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -707,9 +665,10 @@ func TestServerSubscriberSigns(t *testing.T) {
 	var lookupProfile *Profile
 	for {
 		lookupProfile, err = client.Lookup(name)
-		if err != ErrCouldntVerify {
+		if lookupProfile != nil {
 			break
 		}
+		runtime.Gosched()
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
