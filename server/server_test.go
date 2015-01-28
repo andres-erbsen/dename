@@ -685,9 +685,13 @@ func TestServerSubscriberSigns(t *testing.T) {
 	for lookupProfile == nil {
 		var lookupReply *ClientReply
 		lookupProfile, lookupReply, err = client.LookupReply(name)
+		if lookupReply == nil {
+			t.Fatal(err)
+		}
 		if lookupReply.LookupNodes != nil && err != nil {
 			// only check th error if the server returns /something/ -- it may
 			// be justuninitialized
+			t.Errorf("reply: %v\n reply hex: %x\n", lookupReply, PBEncode(lookupReply))
 			t.Fatal(err)
 		}
 		runtime.Gosched()

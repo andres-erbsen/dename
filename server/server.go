@@ -318,6 +318,7 @@ func (server *server) FinalizeRound(roundNumber uint64, merklemap *MerkleMap, wb
 	if err != nil {
 		return err
 	}
+	hashOfStateMsgs[server.id] = ourMsgHashOfState
 	if err := checkAllSame(hashOfStateMsgs, msgHashOfState_s); err != nil {
 		return err
 	}
