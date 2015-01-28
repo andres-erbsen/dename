@@ -684,6 +684,9 @@ func TestServerSubscriberSigns(t *testing.T) {
 	var lookupProfile *Profile
 	for lookupProfile == nil {
 		lookupProfile, err = client.Lookup(name)
+		if err != nil {
+			t.Fatal(err)
+		}
 		runtime.Gosched()
 	}
 	if !reflect.DeepEqual(profile, lookupProfile) {
