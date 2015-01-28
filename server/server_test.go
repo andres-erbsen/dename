@@ -683,8 +683,11 @@ func TestServerSubscriberSigns(t *testing.T) {
 	}
 	var lookupProfile *Profile
 	for lookupProfile == nil {
-		lookupProfile, err = client.Lookup(name)
-		if err != nil {
+		var lookupReply *ClientReply
+		lookupProfile, lookupReply, err = client.LookupReply(name)
+		if lookupReply.LookupNodes != nil && err != nil {
+			// only check th error if the server returns /something/ -- it may
+			// be justuninitialized
 			t.Fatal(err)
 		}
 		runtime.Gosched()
