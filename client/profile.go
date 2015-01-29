@@ -28,7 +28,7 @@ var fieldByName = map[string]int32{
 	"ssh-host": 21,    // lines for .ssh/known_hosts
 	"ssh":      22,    // first two space-separated fields for .ssh/authorzed_keys
 	"email":    25,    // email address
-	"dns":      25,    // domain name
+	"dns":      53,    // domain name
 	"http":     80,    // http:// or https:// url
 	"web":      80,    // ^
 	"xmpp":     5222,  // XMPP address
