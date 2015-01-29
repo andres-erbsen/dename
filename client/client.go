@@ -99,6 +99,10 @@ func (c *Client) LookupReply(name string) (profile *Profile, reply *ClientReply,
 		if profile, err = c.LookupFromReply(name, reply); err != nil {
 			return true, err
 		}
+		expirationTime := time.Unix(int64(*profile.ExpirationTime), 0)
+		if expirationTime.Before(time.Now().Add(MAX_VALIDITY_PERIOD * time.Second / 2)) {
+			return true, errOutOfDate{fmt.Sprintf("the profile is out of date and will be erased completely on %s", expirationTime)}
+		}
 		return true, nil
 	})
 	return
@@ -139,6 +143,24 @@ var (
 )
 
 // Enact is a low-level function that completes a fully assembled profile
+type errOutOfDate struct {
+	string
+}
+
+func (e errOutOfDate) Error() string {
+	return e.string
+}
+
+func IsErrOutOfDate(err error) bool {
+	switch err.(type) {
+	case errOutOfDate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Enact is a low-level function that completes an already complete profile
 // operation at any known server. You probably want to use Register, Modify or
 // Transfer instead.
 func (c *Client) Enact(op *SignedProfileOperation, invite []byte) (err error) {
@@ -239,7 +261,8 @@ func (c *Client) AcceptTransfer(sk *[ed25519.PrivateKeySize]byte, op *SignedProf
 // Modify uses a secret key to associate name with profile. The caller must
 // ensure that profile.Version is strictly greater than the version of the
 // currently registered profile; it is usually good practice to increase the
-// version by exactly one.
+// version by exactly one. In many cases it is also desireable to bump to
+// expiration time to just slightly less than one year into the future.
 func (c *Client) Modify(sk *[ed25519.PrivateKeySize]byte, name string, profile *Profile) error {
 	return c.Enact(NewSign(sk, OldSign(sk, MakeOperation(name, profile))), nil)
 }

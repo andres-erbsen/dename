@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // ErrExists that the file/profile being created already exists
@@ -90,7 +91,7 @@ func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, e
 		return
 	}
 	sk = new([64]byte)
-	infSk,err := os.Stat(filepath.Join(path, "sk"))
+	infSk, err := os.Stat(filepath.Join(path, "sk"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,7 +110,7 @@ func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, e
 	}
 
 	copy(sk[:], skData)
-	infProfile,err := os.Stat(filepath.Join(path, "profile"))
+	infProfile, err := os.Stat(filepath.Join(path, "profile"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -130,7 +131,8 @@ func LoadLocalProfile(name, configDir string) (sk *[64]byte, profile *Profile, e
 
 // SetProfileField downloads the profile for name, sets the value of a field
 // and uses sk to remap the name to the old profile. The local copy of the
-// profile is ignored and overwritten.
+// profile is ignored and overwritten. The version number is incremented by one
+// and the expiration time is set to 364 days into the future if it is earlier.
 func SetProfileField(name string, field int32, value []byte, configDir string, client *dnmc.Client) error {
 	configDir, client, err := dirAndClient(configDir, client)
 	if err != nil {
@@ -141,12 +143,19 @@ func SetProfileField(name string, field int32, value []byte, configDir string, c
 		return err
 	}
 	profile, err := client.Lookup(name)
-	if err != nil {
+	if err != nil && !dnmc.IsErrOutOfDate(err) {
 		return err
 	}
+
 	version := profile.GetVersion()
 	profile.Version = new(uint64)
 	*profile.Version = version + 1
+
+	expire := uint64(time.Now().Add(MAX_VALIDITY_PERIOD*time.Second - 24*time.Hour).Unix())
+	if profile.GetExpirationTime() < expire {
+		profile.ExpirationTime = &expire
+	}
+
 	if err := dnmc.SetProfileField(profile, field, value); err != nil {
 		return err
 	}
