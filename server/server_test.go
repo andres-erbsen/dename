@@ -304,11 +304,7 @@ func TestServerRestartOneOfTwo(t *testing.T) {
 	server.Shutdown()
 }
 
-func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]byte) {
-	profile, sk, err := NewProfile(nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+func chopSingleServer(cfg *Config) (restore func()) {
 	cfgServerSingle := make(map[string]*Server)
 	for k, v := range cfg.Server {
 		cfgServerSingle[k] = v
@@ -316,9 +312,17 @@ func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]b
 	}
 	cfgServerBackup := cfg.Server
 	cfg.Server = cfgServerSingle
-	defer func() {
+	return func() {
 		cfg.Server = cfgServerBackup
-	}()
+	}
+}
+
+func frontendRoundTrip(t *testing.T, cfg *Config, name string) (*Profile, *[64]byte) {
+	profile, sk, err := NewProfile(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer chopSingleServer(cfg)() // chop now, defer restore
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -344,24 +348,25 @@ func TestServerFrontendRoundtrip(t *testing.T) {
 
 func TestServerProofOfAbsence(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 2, 0, 0)
+	chopSingleServer(cfg)
 	defer teardown()
 	frontendRoundTrip(t, cfg, "alice")
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	lookupProfile, err := client.Lookup("nonexistent")
+	lookupProfile, reply, err := client.LookupReply("nonexistent")
 	if err != nil {
-		t.Error(err)
+		t.Errorf("%s\n%v\n%x\n", err, reply, PBEncode(reply))
 	}
 	if lookupProfile != nil {
 		t.Errorf("frontend lookup got profile when there was none")
 	}
 
 	frontendRoundTrip(t, cfg, "0")
-	lookupProfile, err = client.Lookup("missing")
+	lookupProfile, reply, err = client.LookupReply("missing")
 	if err != nil {
-		t.Error(err)
+		t.Errorf("%s\n%v\n%x\n", err, reply, PBEncode(reply))
 	}
 	if lookupProfile != nil {
 		t.Errorf("frontend lookup got profile when there was none")
@@ -380,6 +385,7 @@ func TestServerNilNameProofOfAbsence(t *testing.T) {
 	}
 
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 2, 0, 0)
+	chopSingleServer(cfg)
 	defer teardown()
 	frontendRoundTrip(t, cfg, "alice")
 	client, err := NewClient(cfg, nil, nil)
@@ -407,6 +413,7 @@ func TestServerNilNameProofOfAbsence(t *testing.T) {
 func TestServerFrontendTransfer(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
+	chopSingleServer(cfg)
 	_, sk := frontendRoundTrip(t, cfg, "alice")
 	profile2, sk2, err := NewProfile(nil, nil)
 	if err != nil {
@@ -426,6 +433,7 @@ func TestServerFrontendTransfer(t *testing.T) {
 func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
+	chopSingleServer(cfg)
 	correctProfile, sk := frontendRoundTrip(t, cfg, "alice")
 	profile2, sk2, err := NewProfile(nil, nil)
 	if err != nil {
@@ -438,11 +446,10 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	if err := client.AcceptTransfer(sk, TransferProposal(sk, "alice", profile2)); err != ErrNotAuthorized {
 		t.Errorf("unauthorized transfer returned %s", err)
 	}
-	lookupProfile, err := client.Lookup("alice")
+	lookupProfile, reply, err := client.LookupReply("alice")
 	if err != nil {
-		t.Errorf("lookup failed: %s", err)
-	}
-	if !reflect.DeepEqual(lookupProfile, correctProfile) {
+		t.Errorf("lookup failed: %s\n%v\n%x\n", err, reply, PBEncode(reply))
+	} else if !reflect.DeepEqual(lookupProfile, correctProfile) {
 		t.Errorf("unauthorized transfer succeeded")
 	}
 	if err := client.AcceptTransfer(sk2, TransferProposal(sk2, "alice", profile2)); err != ErrNotAuthorized {
@@ -450,15 +457,15 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	}
 	lookupProfile, err = client.Lookup("alice")
 	if err != nil {
-		t.Errorf("lookup failed: %s", err)
-	}
-	if !reflect.DeepEqual(lookupProfile, correctProfile) {
+		t.Errorf("lookup failed: %s\n%v\n%x\n", err, reply, PBEncode(reply))
+	} else if !reflect.DeepEqual(lookupProfile, correctProfile) {
 		t.Errorf("unauthorized transfer succeeded")
 	}
 }
 
 func TestServerFrontendExpiration(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
+	chopSingleServer(cfg)
 	defer teardown()
 	name := "alice"
 	client, err := NewClient(cfg, nil, nil)
