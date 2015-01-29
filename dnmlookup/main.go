@@ -23,15 +23,23 @@ import (
 	"path/filepath"
 )
 
-func usageAndExit() {
-	fmt.Fprintf(os.Stderr, `Missing argument. Usage:
-%s <name> [field]`+"\n", os.Args[0])
-	os.Exit(2)
+
+func usageAndExit(str string) {
+	if str != "" {
+		fmt.Fprintf(os.Stderr, "%s\n", str)
+	}
+	fmt.Fprintf(os.Stderr, "usage:" +
+		"\t%s <name> [field] # get the value for a field.\n" +
+		"\t\t                   Possible fields are: ssh-host, ssh, email, dns, http, web, xmpp,\n" +
+		"\t\t                   jabber, otr, pgp, gpg, or openpgp.\n",
+		os.Args[0])
+
+	os.Exit(1)
 }
 
 func main() {
 	if !(2 <= len(os.Args) && len(os.Args) <= 3) {
-		usageAndExit()
+		usageAndExit("")
 	}
 	name := os.Args[1]
 	var field int32
@@ -39,8 +47,7 @@ func main() {
 		var err error
 		field, err = client.FieldByName(os.Args[2])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", os.Args[2], err)
-			usageAndExit()
+			usageAndExit("unknown field")
 		}
 	}
 
