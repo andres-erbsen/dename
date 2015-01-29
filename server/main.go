@@ -70,6 +70,11 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 	bn := &backNet{servers: comm.servers, handler: comm.OnMessage, subscribers: make(map[net.Conn]struct{})}
 	comm.serverNet = bn
 	comm.subscribers = bn
+
+	if len(cfg.Server) == 0 {
+		return nil, nil, fmt.Errorf("no servers in the config file")
+	}
+
 	for address, s := range cfg.Server {
 		pkData, err := base64.StdEncoding.DecodeString(s.PublicKey)
 		if err != nil {
