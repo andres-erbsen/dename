@@ -10,6 +10,16 @@ provides is similar NameCoin's, but `dename` does not rely on proof of
 work -- instead, each client can pick a set of verifier servers which it
 believes to contain at least one honest member.
 
+## Announcement: `dename.mit.edu` upgrade in progress
+
+I will be changing the leader server at `dename.mit.edu` to run the `notls`
+branch shortly. This should not provide any lasting issues (a
+backwards-compatibility proxy will be set up for clients that only speak TLS).
+There will probably be downtime. If everything goes well, `notls` will become
+`master` and all users and servers will be encouraged to upgrade. In the future,
+announcements like this will be sent to
+[dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
+
 ## Usage
 
 Let's say a friend of yours wishes to grant you write access to a `git`
@@ -168,13 +178,18 @@ somebody else the trouble. Technical and non-technical feedback are
 equally appreciated. To get in touch with us, use the Github issues link
 on this page or [contact us](mailto:dename@mit.edu) by email.
 
+the public mailing list
+[dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers)
+will receive notifications about updates and issues related to the dename
+utilities and the server software respectively.
+
 ### Integrate `dename` with `$YOUR_FAVORITE_APPLICATION`
 
-`dename` is designed to be easy to integrate into other applications
-for a seamless user experience. See "use cases" above for ideas -- pretty much
-any application that already uses secure cryptographic identifiers can be made
-easier to use using `dename`, and building a new system that uses `dename` for
-user management should be comparably easy.
+`dename` is designed to be easy to integrate into other applications for a
+seamless user experience. See the command line examples above for ideas --
+pretty much any application that already uses secure cryptographic identifiers
+can be made easier to use using `dename`, and building a new system that uses
+`dename` for user management should be comparably easy.
 
 ### Run a server
 
