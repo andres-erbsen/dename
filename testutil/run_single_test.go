@@ -11,6 +11,10 @@ import (
 )
 
 func TestRunSingleServer(t *testing.T) {
+	if os.Getenv("RUN_SINGLE_SERVER") == "" {
+		t.Skip()
+	}
+
 	cfg, teardown := SingleServer(t)
 
 	var addr string
