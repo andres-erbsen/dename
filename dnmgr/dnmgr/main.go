@@ -23,27 +23,30 @@ import (
 	"os"
 )
 
-func usageAndExit() {
-	fmt.Fprintf(os.Stderr, `Missing arguments. Usage:
-To create a new profile:
-  %s init <name> <invite>
-To set the value of a field on an existing profile:
-  %s set <name> <field> [value]
-If a value is not provided in the arguments, it will be read from standard input.
-This is(useful if the value contains nul characters.
-`, os.Args[0], os.Args[0])
-	os.Exit(2)
+func usageAndExit(str string) {
+	if str != "" {
+		fmt.Fprintf(os.Stderr, "%s\n", str)
+	}
+	fmt.Fprintf(os.Stderr,"usage:" +
+		"\t%s init <name> <invite>         # create a new profile\n" +
+		"\t%s set  <name> <field>  [value] # set the value for a field\n"+
+		"\t\t                             If the value is empty, stdin will be used. The possible\n" +
+		"\t\t                             fields are: ssh-host, ssh, email, dns, http, web, xmpp,\n" +
+		"\t\t                             jabber, otr, pgp, gpg, or openpgp.\n",
+		os.Args[0], os.Args[0])
+
+	os.Exit(1)
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		usageAndExit()
+		usageAndExit("")
 	}
 	args := os.Args[2:]
 	switch os.Args[1] {
 	case "init":
 		if len(args) < 2 {
-			usageAndExit()
+			usageAndExit("")
 		}
 		name := args[0]
 		invite, err := base64.StdEncoding.DecodeString(args[1])
@@ -69,7 +72,7 @@ func main() {
 				value = []byte(args[2])
 			}
 		} else {
-			usageAndExit()
+			usageAndExit("")
 		}
 		if value == nil {
 			var err error
@@ -81,12 +84,13 @@ func main() {
 		}
 		fieldNumber, err := client.FieldByName(fieldName)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unknown field \"%s\" (%s)\n", fieldName, err)
-			os.Exit(1)
+			usageAndExit("unknown field")
 		}
 		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
 			os.Exit(1)
 		}
+	default:
+		usageAndExit("unknown command")
 	}
 }
