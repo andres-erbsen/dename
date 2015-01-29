@@ -31,7 +31,7 @@ func usageAndExit(str string) {
 	fmt.Fprintf(os.Stderr, "usage:" +
 		"\t%s <name> [field] # get the value for a field.\n" +
 		"\t\t                   Possible fields are: ssh-host, ssh, email, dns, http, web, xmpp,\n" +
-		"\t\t                   jabber, otr, pgp, gpg, or openpgp.\n",
+		"\t\t                   jabber, otr, bitcoin, pgp, gpg, or openpgp.\n",
 		os.Args[0])
 
 	os.Exit(1)
