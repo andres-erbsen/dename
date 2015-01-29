@@ -34,6 +34,7 @@ var fieldByName = map[string]int32{
 	"xmpp":     5222,  // XMPP address
 	"jabber":   5222,  // ^
 	"otr":      5223,  // 40 bytes: hex-encoded OTR fingerprint without spaces
+	"bitcoin":  8333,  // bitcoin id
 	"pgp":      11371, // 40 bytes: hex-encoded OpenPGP key fingerprint without spaces
 	"gpg":      11371, // ^
 	"openpgp":  11371, // ^
