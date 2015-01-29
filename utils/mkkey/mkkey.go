@@ -18,18 +18,22 @@ import (
 	"crypto/rand"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"fmt"
 	"os"
 )
 
 func main() {
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "unable to create ed25519 keys")
+		os.Exit(1)
 	}
 	if _, err := os.Stderr.Write(sk[:]); err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "unable to write secret key")
+		os.Exit(1)
 	}
 	if _, err := os.Stdout.Write(PBEncode(&Profile_PublicKey{Ed25519: pk[:]})); err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "unable to write public key")
+		os.Exit(1)
 	}
 }
