@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+func MakeToken() []byte {
+	return testutil.MakeToken()
+}
+
 // SingleServer starts a dename server and returns the corresponding client
 // configuration and a function that will stop the server when called.
 func SingleServer(t *testing.T) (*client.Config, func()) {
