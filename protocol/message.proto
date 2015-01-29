@@ -91,6 +91,8 @@ message ClientReply {
 		INVITE_INVALID = 2;
 		INVITE_USED	 = 3;
 		NOT_AUTHORIZED = 4;
+		NOT_A_LEADER = 5;
+		TRY_AGAIN = 6;
 	}
 	optional Status status = 3 [default = OK];
 }

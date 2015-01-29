@@ -41,6 +41,7 @@ type frontend struct {
 	waitOps           map[string]chan struct{}
 	pk                [32]byte
 	sk                *[32]byte
+	isCore            bool
 
 	stop     chan struct{}
 	waitStop *sync.WaitGroup
@@ -157,6 +158,10 @@ func (fe *frontend) handleRequest(rq *ClientMessage) (reply *ClientReply) {
 		fe.server.state.RUnlock()
 	}
 	if rq.ModifyProfile != nil {
+		if !fe.isCore {
+			reply.Status = ClientReply_NOT_A_LEADER.Enum()
+			return
+		}
 		if rq.ModifyProfile.OldProfileSignature == nil { // new profile being created
 			if len(rq.InviteCode) != 16 {
 				reply.Status = ClientReply_INVITE_INVALID.Enum()
@@ -212,7 +217,12 @@ func (fe *frontend) handleRequest(rq *ClientMessage) (reply *ClientReply) {
 		default:
 		}
 		fe.Unlock()
-		<-ch
+		select {
+		case <-fe.stop:
+			reply.Status = ClientReply_TRY_AGAIN.Enum()
+			return
+		case <-ch:
+		}
 	}
 	return
 }

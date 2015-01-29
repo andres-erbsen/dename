@@ -16,7 +16,6 @@
 		ClientMessage
 		ClientReply
 */
-
 package protocol
 
 import proto "github.com/gogo/protobuf/proto"
@@ -48,6 +47,8 @@ const (
 	ClientReply_INVITE_INVALID        ClientReply_Status = 2
 	ClientReply_INVITE_USED           ClientReply_Status = 3
 	ClientReply_NOT_AUTHORIZED        ClientReply_Status = 4
+	ClientReply_NOT_A_LEADER          ClientReply_Status = 5
+	ClientReply_TRY_AGAIN             ClientReply_Status = 6
 )
 
 var ClientReply_Status_name = map[int32]string{
@@ -56,6 +57,8 @@ var ClientReply_Status_name = map[int32]string{
 	2: "INVITE_INVALID",
 	3: "INVITE_USED",
 	4: "NOT_AUTHORIZED",
+	5: "NOT_A_LEADER",
+	6: "TRY_AGAIN",
 }
 var ClientReply_Status_value = map[string]int32{
 	"OK": 0,
@@ -63,6 +66,8 @@ var ClientReply_Status_value = map[string]int32{
 	"INVITE_INVALID":        2,
 	"INVITE_USED":           3,
 	"NOT_AUTHORIZED":        4,
+	"NOT_A_LEADER":          5,
+	"TRY_AGAIN":             6,
 }
 
 func (x ClientReply_Status) Enum() *ClientReply_Status {
@@ -2487,7 +2492,7 @@ func NewPopulatedClientReply(r randyMessage, easy bool) *ClientReply {
 		}
 	}
 	if r.Intn(10) != 0 {
-		v31 := ClientReply_Status([]int32{0, 1, 2, 3, 4}[r.Intn(5)])
+		v31 := ClientReply_Status([]int32{0, 1, 2, 3, 4, 5, 6}[r.Intn(7)])
 		this.Status = &v31
 	}
 	if !easy && r.Intn(10) != 0 {

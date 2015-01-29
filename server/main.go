@@ -91,11 +91,8 @@ func serverFromConfig(cfg *ServerConfig) (*backNet, *server, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("openserver: %s", err)
 	}
-	isCore := server.communicator.servers[server.id].IsCore
-	if !isCore {
-		fe.inviteMacKey = nil
-	}
-	subscribe := !isCore
+	fe.isCore = server.communicator.servers[server.id].IsCore
+	subscribe := !fe.isCore
 	for _, s := range bn.servers {
 		s.messageBroker.stop = server.stop
 		s.messageBroker.subscribe = subscribe

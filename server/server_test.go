@@ -142,6 +142,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 		}
 		fe := NewFrontend()
 		fe.inviteMacKey = testutil.INVITE_KEY
+		fe.isCore = true
 		server, err := OpenServer(filepath.Join(dir, fmt.Sprintf("%x", id), "db"), sks[id], comm, fe, 0)
 		if err != nil {
 			panic(err)
@@ -728,6 +729,66 @@ func TestServerSubscriberSigns(t *testing.T) {
 		t.Fatalf("could not delete subscriber from client config")
 	}
 	frontendRoundTrip(t, cfg, "bob")
+}
+
+func TestServerVerifierDoesNotHandleUpdates(t *testing.T) {
+	servers, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 1, 0)
+	servers[1].consensusThreshold = 2 // verifier requires both verifier and core (racy set)
+	defer teardown()
+	profile, sk, err := NewProfile(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	verifier := cfg.Server["127.0.0.1:1441"]
+	delete(cfg.Server, "127.0.0.1:1441")
+	coreClient, err := NewClient(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Server["127.0.0.1:1441"] = verifier
+	cfg.Server["unreachable"] = cfg.Server["127.0.0.1:1440"]
+	delete(cfg.Server, "127.0.0.1:1440")
+	verifierClient, err := NewClient(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// do a profile update to make sure verifier has fully initialized.
+	if err := coreClient.Register(sk, "bob", profile, testutil.MakeToken()); err != nil {
+		t.Fatal(err)
+	}
+	var newProfile *Profile
+	for {
+		newProfile, err = verifierClient.Lookup("bob")
+		if newProfile != nil {
+			break
+		}
+		runtime.Gosched()
+	}
+
+	newVersion := uint64(10)
+	newProfile.Version = &newVersion
+	if err := verifierClient.Modify(sk, "bob", newProfile); err == nil {
+		t.Fatal("Non-core server accepted modification for a profile")
+	}
+	// Lookup through the verifier, requiring both signatures
+	// It should never return ErrCouldntVerify because the verifier
+	// should not switch to the new root without 2 signatures
+	var lookupProfile *Profile
+	for {
+		lookupProfile, err = verifierClient.Lookup("bob")
+		if err != nil {
+			t.Error(err)
+		}
+		if lookupProfile != nil {
+			break
+		}
+		runtime.Gosched()
+	}
+	if !reflect.DeepEqual(profile, lookupProfile) {
+		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
+	}
 }
 
 func BenchmarkServerOneServer(b *testing.B) {

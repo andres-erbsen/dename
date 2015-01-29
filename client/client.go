@@ -62,20 +62,18 @@ func (c *Client) connect(s *serverInfo) (*transport.Conn, error) {
 }
 
 func (c *Client) atSomeServer(f func(*transport.Conn) (bool, error)) (err error) {
-next_server:
 	for _, server := range c.servers {
 		var conn *transport.Conn
 		conn, err = c.connect(server)
 		if err != nil {
-			continue next_server
+			continue
 		}
 		var done bool
 		done, err = f(conn)
+		conn.Close()
 		if done {
-			conn.Close()
 			return err
 		}
-		conn.Close()
 	}
 	return err
 }
@@ -140,7 +138,7 @@ var (
 	ErrCouldntVerify        = fmt.Errorf("could not verify the correctness of the response")
 )
 
-// Enact is a low-level function that completes an already complete profile
+// Enact is a low-level function that completes a fully assembled profile
 // operation at any known server. You probably want to use Register, Modify or
 // Transfer instead.
 func (c *Client) Enact(op *SignedProfileOperation, invite []byte) (err error) {
