@@ -46,11 +46,19 @@ func (b *backNet) AddSubscriber(conn net.Conn) {
 // caller MUST call b.waitStop.Add(1) first
 func (b *backNet) listenBackend(ln net.Listener) error {
 	defer b.waitStop.Done()
-	defer ln.Close()
+	ret := make(chan struct{})
+	defer close(ret)
+
+	b.waitStop.Add(1)
 	go func() {
-		<-b.stop
+		defer b.waitStop.Done()
+		select {
+		case <-b.stop:
+		case <-ret:
+		}
 		ln.Close()
 	}()
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -63,17 +71,23 @@ func (b *backNet) listenBackend(ln net.Listener) error {
 		}
 		b.waitStop.Add(1)
 		go func(conn net.Conn) {
-			log.Printf("backnet on %v: %v", conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
+			log.Printf("backnet on %v: %v", conn.RemoteAddr(), b.readHandleLoop(conn))
 			b.waitStop.Done()
 		}(conn)
 	}
 }
 
-func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn) error, stop chan struct{}) error {
-	defer conn.Close()
+func (b *backNet) readHandleLoop(conn net.Conn) error {
+	ret := make(chan struct{})
+	defer close(ret)
+
+	b.waitStop.Add(1)
 	go func() {
-		// XXX: Why is this goroutine not guarded by a waitgroup?
-		<-stop
+		defer b.waitStop.Done()
+		select {
+		case <-b.stop:
+		case <-ret:
+		}
 		conn.Close()
 	}()
 	reader := bufio.NewReader(conn)
@@ -82,27 +96,27 @@ func readHandleLoop(conn net.Conn, maxSize int, handler func([]byte, net.Conn) e
 		size, err := binary.ReadUvarint(reader)
 		if err != nil {
 			select {
-			case <-stop:
-				return errStop
+			case <-b.stop:
+				return nil
 			default:
 				return err
 			}
 		}
+		maxSize := 1 << 24
 		if size > uint64(maxSize) {
 			return fmt.Errorf("readHandleLoop: record too big (%d > %d)", size, uint64(maxSize))
 		}
 		buf := make([]byte, size)
 		_, err = io.ReadFull(reader, buf)
-		// XXX: why is the select outside error checking?
-		select {
-		case <-stop:
-			return errStop
-		default:
-			if err != nil {
+		if err != nil {
+			select {
+			case <-b.stop:
+				return nil
+			default:
 				return err
 			}
 		}
-		if err = handler(buf, conn); err != nil {
+		if err = b.handler(buf, conn); err != nil {
 			return err
 		}
 	}
@@ -148,7 +162,7 @@ func (b *backNet) SendToServer(id uint64, msg *BackendMessage) {
 			server.conn = conn
 			b.waitStop.Add(1)
 			go func(conn net.Conn) {
-				log.Printf("backnet send on %x (%v): %v", id, conn.RemoteAddr(), readHandleLoop(conn, 1<<30, b.handler, b.stop))
+				log.Printf("backnet send on %x (%v): %v", id, conn.RemoteAddr(), b.readHandleLoop(conn))
 				b.waitStop.Done()
 			}(conn)
 		} else {
