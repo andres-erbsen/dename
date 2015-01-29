@@ -87,6 +87,15 @@ not have any way of proving to the world that the correct user actually
 contacted us and asked us to recover their name (as opposed to a third party
 compelling us to do so).
 
+### Update your profile every 6 months
+
+If a profile stays unmodified for a year, the name will become available for
+registration. This way the profiles for which the corresponding secret key is
+long lost won't be cluttering the namespace forever. To make sure legitimate
+users do not lose control of their profiles, lookups will start returning an
+error earlier -- currently at the 6 months mark. The profile does not need to
+change, any `dnmgr set` command will bump the expiration time if successful.
+
 ### Scripts
 
 `dngpg` performs arbitrary `gpg` commands with a `dename` user's public key as
