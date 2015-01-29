@@ -425,7 +425,7 @@ func TestServerFrontendTransfer(t *testing.T) {
 func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 3, 0, 0)
 	defer teardown()
-	_, sk := frontendRoundTrip(t, cfg, "alice")
+	correctProfile, sk := frontendRoundTrip(t, cfg, "alice")
 	profile2, sk2, err := NewProfile(nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -435,10 +435,24 @@ func TestServerFrontendUnauthorizedTransfer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := client.AcceptTransfer(sk, TransferProposal(sk, "alice", profile2)); err != ErrNotAuthorized {
-		t.Error(err)
+		t.Errorf("unauthorized transfer returned %s", err)
+	}
+	lookupProfile, err := client.Lookup("alice")
+	if err != nil {
+		t.Errorf("lookup failed: %s", err)
+	}
+	if !reflect.DeepEqual(lookupProfile, correctProfile) {
+		t.Errorf("unauthorized transfer succeeded")
 	}
 	if err := client.AcceptTransfer(sk2, TransferProposal(sk2, "alice", profile2)); err != ErrNotAuthorized {
-		t.Error(err)
+		t.Errorf("unauthorized transfer returned %s", err)
+	}
+	lookupProfile, err = client.Lookup("alice")
+	if err != nil {
+		t.Errorf("lookup failed: %s", err)
+	}
+	if !reflect.DeepEqual(lookupProfile, correctProfile) {
+		t.Errorf("unauthorized transfer succeeded")
 	}
 }
 
