@@ -216,10 +216,10 @@ On each client, create/edit `~/.config/dename/authorities.cfg`:
 	Threshold = 15s
 	NumConfirmations = 1
 
-	[server "dename@mit.edu"]
+	[server "dename.mit.edu:8899"]
 	PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
 
-	[server "your-server.address:8877"]
+	[server "your-server.address:8899"]
 	PublicKey= # base64 pk here
 	TLSCertFile=/home/you/.ca.crt
 
