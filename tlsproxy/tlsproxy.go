@@ -51,8 +51,9 @@ func RunTLSProxyWith(cert tls.Certificate, listenAddr, connectAddr string, conne
 	}
 
 	t := &TLSProxy{
-		connectAddr: connectAddr,
-		connectPK:   connectPK,
+		connectAddr:  connectAddr,
+		connectPK:    connectPK,
+		maxFrameSize: maxFrameSize,
 
 		timeout: time.Second,
 		stop:    make(chan struct{}),
@@ -108,6 +109,7 @@ func (t *TLSProxy) Client(inConn net.Conn) {
 	if err != nil {
 		plainconn.Close()
 		log.Printf("tlsproxy transport handshake: %s", err)
+		return
 	}
 	t.wg.Add(2)
 	go func() { t.ClientIncoming(inConn, outConn); t.wg.Done() }()
