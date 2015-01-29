@@ -147,7 +147,7 @@ func StartFromConfig(cfg *ServerConfig) *server {
 			log.Fatalf("read transport secret key: %s", err)
 		}
 		if len(skData) != 32 {
-			log.Fatalf("malformed secret key (expected %d bytes, got %d)", 64, len(skData))
+			log.Fatalf("malformed secret key (expected %d bytes, got %d)", 32, len(skData))
 		}
 		copy(sk[:], skData)
 
