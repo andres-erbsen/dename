@@ -202,6 +202,7 @@ up an independent server.
 
 		go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
 		go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
+		chmod 600 ~dename/keys/sk ~dename/keys/pk ~dename/keys/transport-sk ~dename/keys/transport-pk
 
 	Into `~dename/denameserver.cfg`:
 	
