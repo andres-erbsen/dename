@@ -32,7 +32,7 @@ func usageAndExit(str string) {
 		"\t%s set  <name> <field>  [value] # set the value for a field\n"+
 		"\t\t                             If the value is empty, stdin will be used. The possible\n" +
 		"\t\t                             fields are: ssh-host, ssh, email, dns, http, web, xmpp,\n" +
-		"\t\t                             jabber, otr, bitcoin, pgp, gpg, or openpgp.\n",
+		"\t\t                             jabber, otr, bitcoin, tor, pgp, gpg, or openpgp.\n",
 		os.Args[0], os.Args[0])
 
 	os.Exit(1)
