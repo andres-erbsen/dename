@@ -188,14 +188,45 @@ can be made easier to use using `dename`, and building a new system that uses
 ### Run a server
 
 The security of `dename` depends on having a diverse set of verification
-servers. Right now, there are two servers -- this is very much a
-non-ideal situation. If you are not at MIT, have a machine to spare (it
-does not have to be fancy) and are willing to put in the effort of
-deploying a Go program (single static binary), [contact
-us](mailto:dename@mit.edu) and let's talk!
+servers. The following notes are provided to give you a rough idea on how 
 
-(The installation instructions that used to be here will return when the `notls`
-change is over.)
+
+1. Add yourself to
+[dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
+2. Clone this repository and build `server/server` using `go build`
+3. Configure the server
+
+	go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
+	go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
+
+	[backend]
+	DataDirectory = /home/dename/leveldb
+	SigningKeyPath = /home/dename/keys/sk
+	Listen = 0.0.0.0:8877
+	[frontend]
+	TransportKeyPath = /keys/dename-transport-sk
+	Listen = 0.0.0.0:6263
+	[server "dename.mit.edu:8877"]
+	PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+	IsCore = true
+	[server "127.0.0.1:8877"]
+	PublicKey = # run `base64 ~dename/keys/pk` and copy here
+
+4. Configure your client to talk to your server
+
+[freshness]
+Threshold = 60s
+NumConfirmations = 1
+[server "dename.mit.edu:6263"]
+PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+TransportPublicKey = "f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
+[server "your-server:6263"]
+publickey = # run `base64 ~dename/keys/pk` and copy here
+transportpublickey = run `base64 ~dename/keys/transport-pk` and copy here
+
+5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
+   us know how it went, and whether you'd like to have your server added to a
+   public list of community servers (see issue #24).
 
 [OpenPGP]: https://andreser.scripts.mit.edu/blog/2013-08-10-how-to-use-openpgp-for-email-in-1000-words/
 [`ssh` host key]: http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-checking-a-server%E2%80%99s-ssh-host-fingerprint-with-the-web-console#Explaining
