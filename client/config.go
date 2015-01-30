@@ -27,6 +27,7 @@ type Server struct {
 	PublicKey          string
 	Timeout            string
 	TransportPublicKey string
+	ReadOnly           bool
 }
 type Freshness struct {
 	Threshold        string
@@ -80,7 +81,7 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 			transportPK := new([32]byte)
 			copy(transportPK[:], transportPkData)
 		}
-		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, transportPK: transportPK}
+		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, transportPK: transportPK, readOnly: server.ReadOnly}
 	}
 	c.consensusNumConfirmations = len(cfg.Server)
 	if dialer == nil {

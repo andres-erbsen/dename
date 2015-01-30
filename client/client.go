@@ -35,6 +35,7 @@ type serverInfo struct {
 	address     string
 	timeout     time.Duration
 	transportPK *[32]byte
+	readOnly    bool
 }
 
 type Client struct {
@@ -61,8 +62,11 @@ func (c *Client) connect(s *serverInfo) (*transport.Conn, error) {
 	return conn, nil
 }
 
-func (c *Client) atSomeServer(f func(*transport.Conn) (bool, error)) (err error) {
+func (c *Client) atSomeServer(isWrite bool, f func(*transport.Conn) (bool, error)) (err error) {
 	for _, server := range c.servers {
+		if isWrite && server.readOnly {
+			continue
+		}
 		var conn *transport.Conn
 		conn, err = c.connect(server)
 		if err != nil {
@@ -88,7 +92,7 @@ func (c *Client) Lookup(name string) (profile *Profile, err error) {
 }
 
 func (c *Client) LookupReply(name string) (profile *Profile, reply *ClientReply, err error) {
-	err = c.atSomeServer(func(conn *transport.Conn) (bool, error) {
+	err = c.atSomeServer(false, func(conn *transport.Conn) (bool, error) {
 		rq := &ClientMessage{PeekState: &true_, ResolveName: []byte(name), PadReplyTo: &pad_to}
 		if _, err = conn.WriteFrame(Pad(PBEncode(rq), 256)); err != nil {
 			return false, err
@@ -160,7 +164,7 @@ func IsErrOutOfDate(err error) bool {
 // operation at any known server. You probably want to use Register, Modify or
 // Transfer instead.
 func (c *Client) Enact(op *SignedProfileOperation, invite []byte) (err error) {
-	err = c.atSomeServer(func(conn *transport.Conn) (bool, error) {
+	err = c.atSomeServer(true, func(conn *transport.Conn) (bool, error) {
 		msg := &ClientMessage{ModifyProfile: op, InviteCode: invite}
 		_, err = conn.WriteFrame(Pad(PBEncode(msg), int(pad_to)))
 		if err != nil {
