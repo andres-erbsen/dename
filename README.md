@@ -10,16 +10,6 @@ provides is similar NameCoin's, but `dename` does not rely on proof of
 work -- instead, each client can pick a set of verifier servers which it
 believes to contain at least one honest member.
 
-## Announcement: `dename.mit.edu` upgrade in progress
-
-I will be changing the leader server at `dename.mit.edu` to run the `notls`
-branch shortly. This should not provide any lasting issues (a
-backwards-compatibility proxy will be set up for clients that only speak TLS).
-There will probably be downtime. If everything goes well, `notls` will become
-`master` and all users and servers will be encouraged to upgrade. In the future,
-announcements like this will be sent to
-[dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
-
 ## Usage
 
 Let's say a friend of yours wishes to grant you write access to a `git`
