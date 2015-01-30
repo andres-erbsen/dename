@@ -225,7 +225,7 @@ up an independent server.
 		NumConfirmations = 1
 		[server "dename.mit.edu:6263"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
-		TransportPublicKey = "f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
+		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
 		[server "your-server:6263"]
 		publickey = # run `base64 ~dename/keys/pk` and copy here
 		transportpublickey = run `base64 ~dename/keys/transport-pk` and copy here
