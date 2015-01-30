@@ -32,7 +32,7 @@ func usageAndExit(str string) {
 		"\t%s <name> [field] # get the value for a field.\n" +
 		"\t\t                   Possible fields are: bitcoin, dename, dename-transport, dns,\n" +
 		"\t\t                   email, gpg, http, jabber, openpgp, otr, pgp, ssh, ssh-host,\n" +
-		"\t\t                   tor, web, or xmpp\n",
+		"\t\t                   textsecure, tor, web, or xmpp\n",
 		os.Args[0])
 
 	os.Exit(1)

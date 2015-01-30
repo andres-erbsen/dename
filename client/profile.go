@@ -41,6 +41,7 @@ var fieldByName = map[string]int32{
 	"pgp":			11371, // 40 bytes: hex-encoded OpenPGP key fingerprint without spaces
 	"gpg":			11371, // ^
 	"openpgp":		11371, // ^
+	"textsecure":		13785, // 66 bytes: hex encoded fingerprint of a textsecure user
 }
 
 func FieldByName(fieldName string) (fieldNumber int32, err error) {

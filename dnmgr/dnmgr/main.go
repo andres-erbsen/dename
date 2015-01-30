@@ -33,7 +33,7 @@ func usageAndExit(str string) {
 		"\t\t                             If the value is empty, stdin will be used. Possible\n" +
 		"\t\t                             fields are: bitcoin, dename, dename-transport, dns,\n" +
 		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n" +
-		"\t\t                             ssh-host, tor, web, or xmpp.\n",
+		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n",
 		os.Args[0], os.Args[0])
 
 	os.Exit(1)
