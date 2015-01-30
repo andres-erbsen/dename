@@ -46,6 +46,10 @@ inconvenient.
 
 This requires the [`go` language toolchain](http://golang.org/).
 
+To update an existing `dename` installation, run
+
+	go get -u github.com/andres-erbsen/dename/{dnmgr/dnmgr,dnmlookup}
+
 ### Command line
 
 Authorize *Alice* to control the current machine using `ssh`:
