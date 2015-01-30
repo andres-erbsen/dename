@@ -194,8 +194,10 @@ up an independent server.
 
 1. Add yourself to
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
-2. Clone this repository and build `server/server` using `go build`. Also make
-   sure your client software is up to date.
+2. Clone this repository and run the following command to build the server
+
+	cd server/server && go build -v; cd ../..
+
 3. Configure the server
 
 		go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
@@ -208,7 +210,7 @@ up an independent server.
 		SigningKeyPath = /home/dename/keys/sk
 		Listen = 0.0.0.0:8877
 		[frontend]
-		TransportKeyPath = /keys/dename-transport-sk
+		TransportKeyPath = /home/dename/keys/dename-transport-sk
 		Listen = 0.0.0.0:6263
 		[server "dename.mit.edu:8877"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
