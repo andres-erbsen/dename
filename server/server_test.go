@@ -804,7 +804,32 @@ func TestServerClientRespectsReadOnly(t *testing.T) {
 	for i := 1; i < 6; i++ {
 		cfg.Server[fmt.Sprintf("127.0.0.1:144%d", i)].ReadOnly = true
 	}
-	frontendRoundTrip(t, cfg, "alice")
+	name := "alice"
+	profile, sk, err := NewProfile(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClient(cfg, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Register(sk, name, profile, testutil.MakeToken()); err != nil {
+		t.Error(err)
+	}
+	var lookupProfile *Profile
+	for {
+		lookupProfile, err = client.Lookup(name)
+		if lookupProfile != nil {
+			break
+		}
+		runtime.Gosched()
+	}
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(profile, lookupProfile) {
+		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
+	}
 }
 
 func BenchmarkServerOneServer(b *testing.B) {
