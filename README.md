@@ -215,15 +215,15 @@ servers. The following notes are provided to give you a rough idea on how
 
 4. Configure your client to talk to your server
 
-[freshness]
-Threshold = 60s
-NumConfirmations = 1
-[server "dename.mit.edu:6263"]
-PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
-TransportPublicKey = "f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
-[server "your-server:6263"]
-publickey = # run `base64 ~dename/keys/pk` and copy here
-transportpublickey = run `base64 ~dename/keys/transport-pk` and copy here
+		[freshness]
+		Threshold = 60s
+		NumConfirmations = 1
+		[server "dename.mit.edu:6263"]
+		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+		TransportPublicKey = "f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
+		[server "your-server:6263"]
+		publickey = # run `base64 ~dename/keys/pk` and copy here
+		transportpublickey = run `base64 ~dename/keys/transport-pk` and copy here
 
 5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
    us know how it went, and whether you'd like to have your server added to a
