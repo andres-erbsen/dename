@@ -188,7 +188,8 @@ can be made easier to use using `dename`, and building a new system that uses
 ### Run a server
 
 The security of `dename` depends on having a diverse set of verification
-servers. The following notes are provided to give you a rough idea on how 
+servers. The following notes are provided to give you a rough idea on how to set
+up an independent server.
 
 
 1. Add yourself to
