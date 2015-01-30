@@ -193,24 +193,25 @@ servers. The following notes are provided to give you a rough idea on how
 
 1. Add yourself to
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
-2. Clone this repository and build `server/server` using `go build`
+2. Clone this repository and build `server/server` using `go build`. Also make
+   sure your client software is up to date.
 3. Configure the server
 
-	go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
-	go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
-
-	[backend]
-	DataDirectory = /home/dename/leveldb
-	SigningKeyPath = /home/dename/keys/sk
-	Listen = 0.0.0.0:8877
-	[frontend]
-	TransportKeyPath = /keys/dename-transport-sk
-	Listen = 0.0.0.0:6263
-	[server "dename.mit.edu:8877"]
-	PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
-	IsCore = true
-	[server "127.0.0.1:8877"]
-	PublicKey = # run `base64 ~dename/keys/pk` and copy here
+		go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
+		go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
+	
+		[backend]
+		DataDirectory = /home/dename/leveldb
+		SigningKeyPath = /home/dename/keys/sk
+		Listen = 0.0.0.0:8877
+		[frontend]
+		TransportKeyPath = /keys/dename-transport-sk
+		Listen = 0.0.0.0:6263
+		[server "dename.mit.edu:8877"]
+		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+		IsCore = true
+		[server "127.0.0.1:8877"]
+		PublicKey = # run `base64 ~dename/keys/pk` and copy here
 
 4. Configure your client to talk to your server
 
