@@ -228,7 +228,7 @@ up an independent server.
 		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
 		[server "your-server:6263"]
 		publickey = # run `base64 ~dename/keys/pk` and copy here
-		transportpublickey = run `base64 ~dename/keys/transport-pk` and copy here
+		transportpublickey = # run `base64 ~dename/keys/transport-pk` and copy here
 
 5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
    us know how it went, and whether you'd like to have your server added to a
