@@ -798,6 +798,15 @@ func TestServerVerifierDoesNotHandleUpdates(t *testing.T) {
 	}
 }
 
+func TestServerClientRespectsReadOnly(t *testing.T) {
+	_, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 5, 0)
+	defer teardown()
+	for i := 1; i < 6; i++ {
+		cfg.Server[fmt.Sprintf("127.0.0.1:144%d", i)].ReadOnly = true
+	}
+	frontendRoundTrip(t, cfg, "alice")
+}
+
 func BenchmarkServerOneServer(b *testing.B) {
 	b.StopTimer()
 	servers, _, teardown := startServers(1, 0)
