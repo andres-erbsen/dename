@@ -25,20 +25,22 @@ import (
 )
 
 var fieldByName = map[string]int32{
-	"ssh-host": 21,    // lines for .ssh/known_hosts
-	"ssh":      22,    // first two space-separated fields for .ssh/authorzed_keys
-	"email":    25,    // email address
-	"dns":      53,    // domain name
-	"http":     80,    // http:// or https:// url
-	"web":      80,    // ^
-	"xmpp":     5222,  // XMPP address
-	"jabber":   5222,  // ^
-	"otr":      5223,  // 40 bytes: hex-encoded OTR fingerprint without spaces
-	"bitcoin":  8333,  // bitcoin id
-	"tor":      9050,  // 40 bytes: hex-encoded fingerprint of a tor node
-	"pgp":      11371, // 40 bytes: hex-encoded OpenPGP key fingerprint without spaces
-	"gpg":      11371, // ^
-	"openpgp":  11371, // ^
+	"ssh-host":		21,    // lines for .ssh/known_hosts
+	"ssh":			22,    // first two space-separated fields for .ssh/authorzed_keys
+	"email":		25,    // email address
+	"dns":			53,    // domain name
+	"http":			80,    // http:// or https:// url
+	"web":			80,    // ^
+	"xmpp":			5222,  // XMPP address
+	"jabber":		5222,  // ^
+	"otr":			5223,  // 40 bytes: hex-encoded OTR fingerprint without spaces
+	"dename-transport":	6263,  // dename transport public key   
+	"bitcoin":		8333,  // bitcoin id
+	"dename":		8877,  // dename backend public key
+	"tor":			9050,  // 40 bytes: hex-encoded fingerprint of a tor node
+	"pgp":			11371, // 40 bytes: hex-encoded OpenPGP key fingerprint without spaces
+	"gpg":			11371, // ^
+	"openpgp":		11371, // ^
 }
 
 func FieldByName(fieldName string) (fieldNumber int32, err error) {
