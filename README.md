@@ -201,7 +201,7 @@ up an independent server.
 		go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
 		go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
 
-Into `~dename/denameserver.cfg`:
+	Into `~dename/denameserver.cfg`:
 	
 		[backend]
 		DataDirectory = /home/dename/leveldb
@@ -216,7 +216,7 @@ Into `~dename/denameserver.cfg`:
 		[server "127.0.0.1:8877"]
 		PublicKey = # run `base64 ~dename/keys/pk` and copy here
 
-Run it: `./server/server/server ~dename/denameserver.cfg`
+	Run it: `./server/server/server ~dename/denameserver.cfg`
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 
