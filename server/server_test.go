@@ -115,7 +115,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 	nets := make(map[uint64]*testNet)
 	cfg = new(Config)
 	cfg.Freshness = DefaultFreshness
-	cfg.Server = make(map[string]*Server)
+	cfg.Verifier = make([]string, 0)
 	for i := uint(0); i < n; i++ {
 		pkEd, sk, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
@@ -126,7 +126,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 		pks[id] = pk
 		serverIDs[i] = id
 		sks[id] = sk
-		cfg.Server[fmt.Sprint(id)] = &Server{PublicKey: base64.StdEncoding.EncodeToString(PBEncode(&pk))}
+		cfg.Verifier = append(cfg.Verifier, base64.StdEncoding.EncodeToString(PBEncode(&pk)))
 	}
 	for i := uint(0); i < n; i++ {
 		id := serverIDs[i]
@@ -306,14 +306,18 @@ func TestServerRestartOneOfTwo(t *testing.T) {
 
 func chopSingleServer(cfg *Config) (restore func()) {
 	cfgServerSingle := make(map[string]*Server)
-	for k, v := range cfg.Server {
-		cfgServerSingle[k] = v
-		break
+	for k, v := range cfg.Update {
+		if _, ok := cfg.Lookup[k]; ok {
+			cfgServerSingle[k] = v
+		}
 	}
-	cfgServerBackup := cfg.Server
-	cfg.Server = cfgServerSingle
+	cfgUpdateBackup := cfg.Update
+	cfgLookupBackup := cfg.Lookup
+	cfg.Update = cfgServerSingle
+	cfg.Lookup = cfgServerSingle
 	return func() {
-		cfg.Server = cfgServerBackup
+		cfg.Update = cfgUpdateBackup
+		cfg.Lookup = cfgLookupBackup
 	}
 }
 
@@ -620,22 +624,19 @@ func TestServerVerifierWaits(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	verifier := cfg.Server["127.0.0.1:1441"]
-	delete(cfg.Server, "127.0.0.1:1441")
-	coreClient, err := NewClient(cfg, nil, nil)
+	normalClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.Server["127.0.0.1:1441"] = verifier
-	cfg.Server["unreachable"] = cfg.Server["127.0.0.1:1440"]
-	delete(cfg.Server, "127.0.0.1:1440")
+
+	delete(cfg.Lookup, "127.0.0.1:1440")
 	verifierClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// do a profile update to make sure verifier has fully initialized.
-	if err := coreClient.Register(sk, "bob", profile, testutil.MakeToken()); err != nil {
+	if err := normalClient.Register(sk, "bob", profile, testutil.MakeToken()); err != nil {
 		t.Fatal(err)
 	}
 	for {
@@ -647,7 +648,7 @@ func TestServerVerifierWaits(t *testing.T) {
 	}
 
 	name := "alice"
-	if err := coreClient.Register(sk, name, profile, testutil.MakeToken()); err != nil {
+	if err := normalClient.Register(sk, name, profile, testutil.MakeToken()); err != nil {
 		t.Fatal(err)
 	}
 	// Lookup through the verifier, requiring both signatures
@@ -670,35 +671,20 @@ func TestServerVerifierWaits(t *testing.T) {
 }
 
 func TestServerSubscriberSigns(t *testing.T) {
-	servers, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 0, 1)
+	_, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 0, 1)
 	defer teardown()
-	serverAddr := "127.0.0.1:1440"
-	subscriberAddr := "127.0.0.1:1441"
-	serverPK := cfg.Server[serverAddr]
-	subscriberPK := cfg.Server[subscriberAddr]
-	delete(cfg.Server, subscriberAddr)
-	if len(cfg.Server) != 1 {
-		t.Fatalf("Could not delete subscriber from client config")
-	}
 	client, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	name := "alice"
-	frontendRoundTrip(t, cfg, name)
-	profile, err := client.Lookup(name)
+	profile, sk, err := NewProfile(nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	client.Register(sk, "bob", profile, testutil.MakeToken())
+	// ignore the error. core server did not give subscriber's signature.
 
-	cfg.Server[subscriberAddr] = subscriberPK
-	if len(cfg.Server) != 2 {
-		t.Fatalf("Could not add subscriber to client config")
-	}
-	delete(cfg.Server, serverAddr)
-	if len(cfg.Server) != 1 {
-		t.Fatalf("Could not delete core server from client config")
-	}
+	delete(cfg.Lookup, "127.0.0.1:1440") // talk to subscriber only
 	client, err = NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -706,7 +692,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 	var lookupProfile *Profile
 	for lookupProfile == nil {
 		var lookupReply *ClientReply
-		lookupProfile, lookupReply, err = client.LookupReply(name)
+		lookupProfile, lookupReply, err = client.LookupReply("bob")
 		if lookupReply == nil {
 			t.Fatal(err)
 		}
@@ -722,6 +708,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 		t.Errorf("frontend lookup got wrong profile\n%v\n!=\n%v", lookupProfile, profile)
 	}
 
+	/* TODO: port to new client config format
 	// close the subscriber, check that the main server can still continue
 	close(servers[1].stop)
 	servers[1].waitStop.Wait()
@@ -736,6 +723,7 @@ func TestServerSubscriberSigns(t *testing.T) {
 		t.Fatalf("could not delete subscriber from client config")
 	}
 	frontendRoundTrip(t, cfg, "bob")
+	*/
 }
 
 func TestServerVerifierDoesNotHandleUpdates(t *testing.T) {
@@ -747,15 +735,17 @@ func TestServerVerifierDoesNotHandleUpdates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	verifier := cfg.Server["127.0.0.1:1441"]
-	delete(cfg.Server, "127.0.0.1:1441")
+	verifier := cfg.Lookup["127.0.0.1:1441"]
+	delete(cfg.Lookup, "127.0.0.1:1441")
 	coreClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.Server["127.0.0.1:1441"] = verifier
-	cfg.Server["unreachable"] = cfg.Server["127.0.0.1:1440"]
-	delete(cfg.Server, "127.0.0.1:1440")
+
+	delete(cfg.Lookup, "127.0.0.1:1440")
+	delete(cfg.Update, "127.0.0.1:1440")
+	cfg.Lookup["127.0.0.1:1441"] = verifier
+	cfg.Update["127.0.0.1:1441"] = verifier
 	verifierClient, err := NewClient(cfg, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -801,9 +791,6 @@ func TestServerVerifierDoesNotHandleUpdates(t *testing.T) {
 func TestServerClientRespectsReadOnly(t *testing.T) {
 	_, _, cfg, teardown := startWithConfigAndBacknet(t, 1, 5, 0)
 	defer teardown()
-	for i := 1; i < 6; i++ {
-		cfg.Server[fmt.Sprintf("127.0.0.1:144%d", i)].ReadOnly = true
-	}
 	name := "alice"
 	profile, sk, err := NewProfile(nil, nil)
 	if err != nil {

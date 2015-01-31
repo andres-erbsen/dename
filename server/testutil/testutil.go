@@ -91,9 +91,17 @@ IsCore = %t
 	}
 	cfg := new(Config)
 	cfg.Freshness = DefaultFreshness
-	cfg.Server = make(map[string]*Server)
+	cfg.Update = make(map[string]*Server)
+	cfg.Lookup = make(map[string]*Server)
+	cfg.Verifier = make([]string, 0, len(ids))
 	for i, id := range ids {
-		cfg.Server[fmt.Sprintf("127.0.0.1:144%d", i)] = &Server{PublicKey: base64.StdEncoding.EncodeToString(PBEncode(pks[id])), TransportPublicKey: base64.StdEncoding.EncodeToString(transportPKs[id][:])}
+		cfg.Verifier = append(cfg.Verifier, base64.StdEncoding.EncodeToString(PBEncode(pks[id])))
+		addr := fmt.Sprintf("127.0.0.1:144%d", i)
+		details := &Server{TransportPublicKey: base64.StdEncoding.EncodeToString(transportPKs[id][:])}
+		cfg.Lookup[addr] = details
+		if i < int(numCoreServers) {
+			cfg.Update[addr] = details
+		}
 	}
 	return dirs, cfg, func() {
 		os.RemoveAll(dir)

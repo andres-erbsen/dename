@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	DefaultServers   = map[string]*Server{"dename.mit.edu:6263": &Server{PublicKey: "CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==", TransportPublicKey: "4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=", ReadOnly: true}}
+	DefaultVerifiers = []string{"CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA=="}
+	DefaultServers   = map[string]*Server{"dename.mit.edu:6263": &Server{TransportPublicKey: "4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY="}}
 	DefaultTimeout   = "10s"
 	DefaultFreshness = Freshness{"60s", len(DefaultServers)}
-	DefaultConfig    = Config{DefaultFreshness, DefaultServers}
+	DefaultConfig    = Config{DefaultFreshness, DefaultVerifiers, DefaultServers, DefaultServers}
 	DefaultDialer    = proxy.FromEnvironment()
 )
