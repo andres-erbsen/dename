@@ -17,23 +17,33 @@ func TestRunSingleServer(t *testing.T) {
 
 	cfg, teardown := SingleServer(t)
 
-	var addr string
+	var name, addr string
 	var server *client.Server
+	var verifier *client.Verifier
+	for name, verifier = range cfg.Verifier {
+		break
+	}
 	for addr, server = range cfg.Update {
 		break
 	}
 	fmt.Printf(`
-[verification]
-verifier = %s
+[consensus]
+SignaturesRequired = %d
 
 [freshness]
+SignaturesRequired = %d
 Threshold = %s
-NumConfirmations = %d
 
-[server "%s"]
+[verifier "%s"]
+PublicKey = %s
+
+[update "%s"]
 TransportPublicKey = %s
 
-`, cfg.Verification.Verifier[0], cfg.Freshness.Threshold, cfg.Freshness.NumConfirmations, addr, server.TransportPublicKey)
+[lookup "%s"]
+TransportPublicKey = %s
+
+`, cfg.Consensus.SignaturesRequired, cfg.Freshness.SignaturesRequired, cfg.Freshness.Threshold, name, verifier.PublicKey, addr, server.TransportPublicKey, addr, server.TransportPublicKey)
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(base64.StdEncoding.EncodeToString(MakeToken()))

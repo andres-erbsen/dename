@@ -19,10 +19,11 @@ import (
 )
 
 var (
-	DefaultVerifiers = []string{"CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA=="}
-	DefaultServers   = map[string]*Server{"dename.mit.edu:6263": &Server{TransportPublicKey: "4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY="}}
-	DefaultTimeout   = "10s"
-	DefaultFreshness = Freshness{"60s", len(DefaultServers)}
-	DefaultConfig    = Config{Verification{DefaultVerifiers}, DefaultFreshness, DefaultServers, DefaultServers}
-	DefaultDialer    = proxy.FromEnvironment()
+	DefaultVerifiers          = map[string]*Verifier{"dename@mit.edu": &Verifier{"CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA=="}}
+	DefaultServers            = map[string]*Server{"dename.mit.edu:6263": &Server{TransportPublicKey: "4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY="}}
+	DefaultTimeout            = "10s"
+	DefaultFreshnessThreshold = "60s"
+	DefaultFreshness          = Freshness{SignaturesRequired: len(DefaultVerifiers), Threshold: DefaultFreshnessThreshold}
+	DefaultConfig             = Config{Verifier: DefaultVerifiers, Lookup: DefaultServers, Update: DefaultServers}
+	DefaultDialer             = proxy.FromEnvironment()
 )

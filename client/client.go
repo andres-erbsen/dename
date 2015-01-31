@@ -30,6 +30,11 @@ import (
 var true_ = true
 var pad_to uint64 = 4 << 10
 
+type verifier struct {
+	name string
+	pk   *Profile_PublicKey
+}
+
 type server struct {
 	address     string
 	timeout     time.Duration
@@ -37,14 +42,14 @@ type server struct {
 }
 
 type Client struct {
-	now                       func() time.Time
-	dialer                    proxy.Dialer
-	freshnessThreshold        time.Duration
-	freshnessNumConfirmations int
-	consensusNumConfirmations int
-	verifier                  map[uint64]*Profile_PublicKey
-	update                    []*server
-	lookup                    []*server
+	now                         func() time.Time
+	dialer                      proxy.Dialer
+	freshnessThreshold          time.Duration
+	freshnessSignaturesRequired int
+	consensusSignaturesRequired int
+	verifier                    map[uint64]*verifier
+	update                      []*server
+	lookup                      []*server
 }
 
 func (c *Client) connect(s *server) (*transport.Conn, error) {
@@ -80,9 +85,9 @@ func (c *Client) atSomeServer(servers []*server, f func(*transport.Conn) (bool, 
 }
 
 // Lookup retrieves the profile that corresponds to name from any server in the
-// client's config. It is guaranteed that at least NumConfirmations of the
+// client's config. It is guaranteed that at least SignaturesRequired of the
 // servers have confirmed the correctness of the (name, profile) mapping and
-// that Freshness.NumConfirmations have done this within Freshness.Threshold.
+// that Freshness.SignaturesRequired have done this within Freshness.Threshold.
 func (c *Client) Lookup(name string) (profile *Profile, err error) {
 	profile, _, err = c.LookupReply(name)
 	return
@@ -276,12 +281,12 @@ func (c *Client) VerifyConsensus(signedHashOfStateMsgs []*SignedServerMessage) (
 		if err = proto.Unmarshal(signedMsg.Message, msg); err != nil {
 			continue
 		}
-		server, ok := c.verifier[*msg.Server]
-		if !ok || server.Ed25519 == nil {
+		v, ok := c.verifier[*msg.Server]
+		if !ok || v.pk.Ed25519 == nil {
 			continue
 		}
 		var pk_ed [ed25519.PublicKeySize]byte
-		copy(pk_ed[:], server.Ed25519)
+		copy(pk_ed[:], v.pk.Ed25519)
 		var sig_ed [ed25519.SignatureSize]byte
 		copy(sig_ed[:], signedMsg.Signature)
 		if !ed25519.Verify(&pk_ed, append([]byte("msg\x00"), signedMsg.Message...), &sig_ed) {
@@ -298,11 +303,22 @@ func (c *Client) VerifyConsensus(signedHashOfStateMsgs []*SignedServerMessage) (
 		}
 		freshnessServers[*msg.Server] = struct{}{}
 	}
-	if len(consensusServers) < c.consensusNumConfirmations {
-		return nil, fmt.Errorf("not enough valid signatures for consensus (%d out of %d)", len(consensusServers), c.consensusNumConfirmations)
+	if len(consensusServers) < c.consensusSignaturesRequired {
+		return nil, fmt.Errorf("not enough valid signatures for consensus (%d out of %d): %s", len(consensusServers), c.consensusSignaturesRequired, printVerifiers(consensusServers, c.verifier))
 	}
-	if len(freshnessServers) < c.freshnessNumConfirmations {
-		return nil, fmt.Errorf("not enough fresh signatures (%d out of %d)", len(freshnessServers), c.freshnessNumConfirmations)
+	if len(freshnessServers) < c.freshnessSignaturesRequired {
+		return nil, fmt.Errorf("not enough fresh signatures (%d out of %d): %s", len(freshnessServers), c.freshnessSignaturesRequired, printVerifiers(freshnessServers, c.verifier))
 	}
 	return rootHash, nil
+}
+
+func printVerifiers(vs map[uint64]struct{}, verifier map[uint64]*verifier) string {
+	ret := ""
+	for id := range vs {
+		if ret != "" {
+			ret += ", "
+		}
+		ret += verifier[id].name
+	}
+	return ret
 }

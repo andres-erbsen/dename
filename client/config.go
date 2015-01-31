@@ -23,13 +23,17 @@ import (
 	"time"
 )
 
-type Verification struct {
-	Verifier []string
+type Consensus struct {
+	SignaturesRequired int
 }
 
 type Freshness struct {
-	Threshold        string
-	NumConfirmations int
+	SignaturesRequired int
+	Threshold          string
+}
+
+type Verifier struct {
+	PublicKey string
 }
 
 type Server struct {
@@ -38,10 +42,11 @@ type Server struct {
 }
 
 type Config struct {
-	Verification Verification
+	Consensus
 	Freshness
-	Update map[string]*Server
-	Lookup map[string]*Server
+	Verifier map[string]*Verifier
+	Update   map[string]*Server
+	Lookup   map[string]*Server
 }
 
 func parseServer(address string, scfg *Server) (*server, error) {
@@ -83,18 +88,9 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		cfg = &DefaultConfig
 	}
 	c = new(Client)
-	c.freshnessThreshold, err = time.ParseDuration(cfg.Freshness.Threshold)
-	if err != nil {
-		return nil, err
-	}
-	if now == nil {
-		now = time.Now
-	}
-	c.now = now
-	c.freshnessNumConfirmations = cfg.Freshness.NumConfirmations
-	c.verifier = make(map[uint64]*Profile_PublicKey, len(cfg.Verification.Verifier))
-	for _, pubkeyBase64 := range cfg.Verification.Verifier {
-		pkData, err := base64.StdEncoding.DecodeString(pubkeyBase64)
+	c.verifier = make(map[uint64]*verifier, len(cfg.Verifier))
+	for name, verifierCfg := range cfg.Verifier {
+		pkData, err := base64.StdEncoding.DecodeString(verifierCfg.PublicKey)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +98,7 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		if err = proto.Unmarshal(pkData, pk); err != nil {
 			return nil, err
 		}
-		c.verifier[pk.ID()] = pk
+		c.verifier[pk.ID()] = &verifier{name: name, pk: pk}
 	}
 
 	if c.update, err = parseServers(cfg.Update); err != nil {
@@ -112,10 +108,31 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		return nil, err
 	}
 
-	c.consensusNumConfirmations = len(cfg.Verification.Verifier)
+	if cfg.Consensus.SignaturesRequired != 0 {
+		c.consensusSignaturesRequired = cfg.Consensus.SignaturesRequired
+	} else {
+		c.consensusSignaturesRequired = len(cfg.Verifier)
+	}
+	if cfg.Freshness.SignaturesRequired != 0 {
+		c.freshnessSignaturesRequired = cfg.Freshness.SignaturesRequired
+	} else {
+		c.freshnessSignaturesRequired = len(cfg.Verifier)
+	}
+	freshnessThreshold := DefaultFreshnessThreshold
+	if cfg.Freshness.Threshold != "" {
+		freshnessThreshold = cfg.Freshness.Threshold
+	}
+	c.freshnessThreshold, err = time.ParseDuration(freshnessThreshold)
+	if err != nil {
+		return nil, err
+	}
 	if dialer == nil {
 		dialer = DefaultDialer
 	}
 	c.dialer = dialer
+	if now == nil {
+		now = time.Now
+	}
+	c.now = now
 	return c, nil
 }

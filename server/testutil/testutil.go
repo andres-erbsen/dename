@@ -26,7 +26,7 @@ func MakeToken() []byte {
 	return append(r[:], mac.Sum(nil)[:8]...)
 }
 
-func CreateConfigs(t *testing.T, numCoreServers, numVerifiers, numSubscribers uint) (dirs []string, clientConfig *Config, teardown func()) {
+func CreateConfigs(t testing.TB, numCoreServers, numVerifiers, numSubscribers uint) (dirs []string, clientConfig *Config, teardown func()) {
 	n := numCoreServers + numVerifiers + numSubscribers
 	dir, err := ioutil.TempDir("", "servertest")
 	if err != nil {
@@ -93,9 +93,9 @@ IsCore = %t
 	cfg.Freshness = DefaultFreshness
 	cfg.Update = make(map[string]*Server)
 	cfg.Lookup = make(map[string]*Server)
-	cfg.Verification.Verifier = make([]string, 0, len(ids))
+	cfg.Verifier = make(map[string]*Verifier, len(ids))
 	for i, id := range ids {
-		cfg.Verification.Verifier = append(cfg.Verification.Verifier, base64.StdEncoding.EncodeToString(PBEncode(pks[id])))
+		cfg.Verifier[fmt.Sprintf("%x", id)] = &Verifier{base64.StdEncoding.EncodeToString(PBEncode(pks[id]))}
 		addr := fmt.Sprintf("127.0.0.1:144%d", i)
 		details := &Server{TransportPublicKey: base64.StdEncoding.EncodeToString(transportPKs[id][:])}
 		cfg.Lookup[addr] = details

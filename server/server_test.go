@@ -115,7 +115,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 	nets := make(map[uint64]*testNet)
 	cfg = new(Config)
 	cfg.Freshness = DefaultFreshness
-	cfg.Verification.Verifier = make([]string, 0)
+	cfg.Verifier = make(map[string]*Verifier, 0)
 	for i := uint(0); i < n; i++ {
 		pkEd, sk, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
@@ -126,7 +126,7 @@ func startServers(n uint, loss float64) (serverSlice []*server, cfg *Config, tea
 		pks[id] = pk
 		serverIDs[i] = id
 		sks[id] = sk
-		cfg.Verification.Verifier = append(cfg.Verification.Verifier, base64.StdEncoding.EncodeToString(PBEncode(&pk)))
+		cfg.Verifier[fmt.Sprintf("%x", id)] = &Verifier{base64.StdEncoding.EncodeToString(PBEncode(&pk))}
 	}
 	for i := uint(0); i < n; i++ {
 		id := serverIDs[i]
