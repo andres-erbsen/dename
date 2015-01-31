@@ -23,6 +23,6 @@ var (
 	DefaultServers   = map[string]*Server{"dename.mit.edu:6263": &Server{TransportPublicKey: "4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY="}}
 	DefaultTimeout   = "10s"
 	DefaultFreshness = Freshness{"60s", len(DefaultServers)}
-	DefaultConfig    = Config{DefaultFreshness, DefaultVerifiers, DefaultServers, DefaultServers}
+	DefaultConfig    = Config{Verification{DefaultVerifiers}, DefaultFreshness, DefaultServers, DefaultServers}
 	DefaultDialer    = proxy.FromEnvironment()
 )

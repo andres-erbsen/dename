@@ -19,19 +19,21 @@ func TestRunSingleServer(t *testing.T) {
 
 	var addr string
 	var server *client.Server
-	for addr, server = range cfg.Server {
+	for addr, server = range cfg.Update {
 		break
 	}
 	fmt.Printf(`
+[verification]
+verifier = %s
+
 [freshness]
 Threshold = %s
 NumConfirmations = %d
 
 [server "%s"]
-PublicKey = %s
 TransportPublicKey = %s
 
-`, cfg.Freshness.Threshold, cfg.Freshness.NumConfirmations, addr, server.PublicKey, server.TransportPublicKey)
+`, cfg.Verification.Verifier[0], cfg.Freshness.Threshold, cfg.Freshness.NumConfirmations, addr, server.TransportPublicKey)
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(base64.StdEncoding.EncodeToString(MakeToken()))

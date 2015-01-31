@@ -23,20 +23,25 @@ import (
 	"time"
 )
 
-type Server struct {
-	Timeout            string
-	TransportPublicKey string
+type Verification struct {
+	Verifier []string
 }
 
 type Freshness struct {
 	Threshold        string
 	NumConfirmations int
 }
+
+type Server struct {
+	Timeout            string
+	TransportPublicKey string
+}
+
 type Config struct {
+	Verification Verification
 	Freshness
-	Verifier []string
-	Update   map[string]*Server
-	Lookup   map[string]*Server
+	Update map[string]*Server
+	Lookup map[string]*Server
 }
 
 func parseServer(address string, scfg *Server) (*server, error) {
@@ -87,8 +92,8 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 	}
 	c.now = now
 	c.freshnessNumConfirmations = cfg.Freshness.NumConfirmations
-	c.verifier = make(map[uint64]*Profile_PublicKey, len(cfg.Verifier))
-	for _, pubkeyBase64 := range cfg.Verifier {
+	c.verifier = make(map[uint64]*Profile_PublicKey, len(cfg.Verification.Verifier))
+	for _, pubkeyBase64 := range cfg.Verification.Verifier {
 		pkData, err := base64.StdEncoding.DecodeString(pubkeyBase64)
 		if err != nil {
 			return nil, err
@@ -107,7 +112,7 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		return nil, err
 	}
 
-	c.consensusNumConfirmations = len(cfg.Verifier)
+	c.consensusNumConfirmations = len(cfg.Verification.Verifier)
 	if dialer == nil {
 		dialer = DefaultDialer
 	}
