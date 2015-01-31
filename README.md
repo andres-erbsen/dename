@@ -211,7 +211,7 @@ up an independent server.
 		SigningKeyPath = /home/dename/keys/sk
 		Listen = 0.0.0.0:8877
 		[frontend]
-		TransportKeyPath = /home/dename/keys/dename-transport-sk
+		TransportKeyPath = /home/dename/keys/transport-sk
 		Listen = 0.0.0.0:6263
 		[server "dename.mit.edu:8877"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
@@ -223,16 +223,16 @@ up an independent server.
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 
+		[verification]
+		verifier = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+		verifier = # run `base64 ~dename/keys/pk` and copy here
 		[freshness]
 		Threshold = 60s
-		NumConfirmations = 1
-		[server "dename.mit.edu:6263"]
-		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
+		NumConfirmations = 2
+		[update "dename.mit.edu:6263"]
 		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
-		[server "your-server:6263"]
-		PublicKey = # run `base64 ~dename/keys/pk` and copy here
+		[lookup "your-dename-server"]
 		TransportPublicKey = # run `base64 ~dename/keys/transport-pk` and copy here
-		ReadOnly = true
 
 5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
    us know how it went, and whether you'd like to have your server added to a
