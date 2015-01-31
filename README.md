@@ -187,10 +187,9 @@ can be made easier to use using `dename`, and building a new system that uses
 
 ### Run a server
 
-The security of `dename` depends on having a diverse set of verification
-servers. The following notes are provided to give you a rough idea on how to set
-up an independent server.
-
+The security of `dename` depends on having a diverse set of
+[servers](community-servers.md). The following notes are provided to give you a
+rough idea on how to set up an independent server. 
 
 1. Add yourself to
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
@@ -236,7 +235,7 @@ up an independent server.
 
 5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
    us know how it went, and whether you'd like to have your server added to a
-   public list of community servers (see issue #24).
+   public list of [community servers](community-servers.md).
 
 [OpenPGP]: https://andreser.scripts.mit.edu/blog/2013-08-10-how-to-use-openpgp-for-email-in-1000-words/
 [`ssh` host key]: http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-checking-a-server%E2%80%99s-ssh-host-fingerprint-with-the-web-console#Explaining
