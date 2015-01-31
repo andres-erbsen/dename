@@ -24,7 +24,8 @@ Currently the only server that can handle updates.
 
 - Accepts signatures: `dename.mit.edu`
 - Requires signatures: `dename.mit.edu`
-- Contact: <https://github.com/alokat>
+- Contact: PGP: `4981 E0FD 7206 B64A 0384 7B1A 1E1D 9C86 A5BE 1A64`, `dename`: `fritjof`
+- Config entries:
 
 		[verifier "alokat"]
 		PublicKey = CiD6CFKBpG54dG3OMx6PJ58z5rlNFK24Dx2HMpR7urHIVA==
