@@ -25,7 +25,7 @@ import (
 	"os"
 )
 
-const PRIVATE_KEY string = "private_key"
+const SECRET_KEY string = "secret_key"
 const PUBLIC_KEY string = "public_key"
 
 func main() {
@@ -37,15 +37,15 @@ func main() {
 		dir = os.Args[1]
 	}
 
-	privfile := path.Join(dir, PRIVATE_KEY)
-	pubfile := path.Join(dir, PUBLIC_KEY)
+	skfile := path.Join(dir, SECRET_KEY)
+	pkfile := path.Join(dir, PUBLIC_KEY)
 
-	if _, err := os.Stat(privfile); err == nil {
-		fmt.Fprintf(os.Stderr, "%s already exists\n", privfile)
+	if _, err := os.Stat(skfile); err == nil {
+		fmt.Fprintf(os.Stderr, "%s already exists\n", pkfile)
 		os.Exit(1)
 	}
-	if _, err := os.Stat(pubfile); err == nil {
-		fmt.Fprintf(os.Stderr, "%s already exists\n", pubfile)
+	if _, err := os.Stat(pkfile); err == nil {
+		fmt.Fprintf(os.Stderr, "%s already exists\n", pkfile)
 		os.Exit(1)
 	}
 
@@ -54,13 +54,13 @@ func main() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	if err := ioutil.WriteFile(privfile, sk[:], 0600); err != nil {
+	if err := ioutil.WriteFile(skfile, sk[:], 0600); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
 	data := PBEncode(&Profile_PublicKey{Ed25519: pk[:]})
-	if err := ioutil.WriteFile(pubfile, data, 0644); err != nil {
+	if err := ioutil.WriteFile(pkfile, data, 0644); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
