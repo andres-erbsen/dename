@@ -41,7 +41,7 @@ func main() {
 	pkfile := path.Join(dir, PUBLIC_KEY)
 
 	if _, err := os.Stat(skfile); err == nil {
-		fmt.Fprintf(os.Stderr, "%s already exists\n", pkfile)
+		fmt.Fprintf(os.Stderr, "%s already exists\n", skfile)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(pkfile); err == nil {
