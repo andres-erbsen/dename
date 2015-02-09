@@ -195,7 +195,7 @@ rough idea on how to set up an independent server.
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
 2. Clone this repository and run the following command to build the server
 
-	cd server/server && go build -v; cd ../..
+		cd server/server && go build -v; cd ../..
 
 3. Configure the server
 
