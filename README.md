@@ -200,36 +200,36 @@ up an independent server.
 
 3. Configure the server
 
-		go run utils/mkkey/mkkey.go 2> ~dename/keys/sk > ~dename/keys/pk
-		go run ../chatterbox/transport/transport-keygen/main.go 2> ~dename/keys/transport-sk > ~dename/keys/transport-pk
-		chmod 600 ~dename/keys/sk ~dename/keys/pk ~dename/keys/transport-sk ~dename/keys/transport-pk
+		mkdir /home/dename/keys && chmod 700 /home/dename/keys
+		go run utils/mkkey/mkkey.go /home/dename/keys
+		go run ../chatterbox/transport/transport-keygen/main.go /home/dename/keys
 
 	Into `~dename/denameserver.cfg`:
 	
 		[backend]
 		DataDirectory = /home/dename/leveldb
-		SigningKeyPath = /home/dename/keys/sk
+		SigningKeyPath = /home/dename/keys/secret_key
 		Listen = 0.0.0.0:8877
 		[frontend]
-		TransportKeyPath = /home/dename/keys/transport-sk
+		TransportKeyPath = /home/dename/keys/transport_secret_key
 		Listen = 0.0.0.0:6263
 		[server "dename.mit.edu:8877"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
 		IsCore = true
 		[server "127.0.0.1:8877"]
-		PublicKey = # run `base64 ~dename/keys/pk` and copy here
+		PublicKey = # run `base64 /home/dename/keys/public_key` and copy here
 
-	Run it: `./server/server/server ~dename/denameserver.cfg`
+	Run it: `./server/server/server /home/dename/denameserver.cfg`
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 
 		[verifier "dename@mit.edu"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
 		[verifier "my-verifier"]
-		PublicKey = # run `base64 ~dename/keys/pk` and copy here
+		PublicKey = # run `base64 /home/dename/keys/public_key` and copy here
 
 		[lookup "my-verifier-address:port"]
-		TransportPublicKey = # run `base64 ~dename/keys/transport-pk` and copy here
+		TransportPublicKey = # run `base64 /home/dename/keys/transport_public_key` and copy here
 		
 		[update "dename.mit.edu:6263"]
 		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=

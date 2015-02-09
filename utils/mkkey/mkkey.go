@@ -18,22 +18,50 @@ import (
 	"crypto/rand"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
+	"io/ioutil"
+	"log"
 	"fmt"
+	"path"
 	"os"
 )
 
+const SECRET_KEY string = "secret_key"
+const PUBLIC_KEY string = "public_key"
+
 func main() {
+	var dir string
+
+	if len(os.Args) < 2 {
+		dir = "."
+	} else {
+		dir = os.Args[1]
+	}
+
+	skfile := path.Join(dir, SECRET_KEY)
+	pkfile := path.Join(dir, PUBLIC_KEY)
+
+	if _, err := os.Stat(skfile); err == nil {
+		fmt.Fprintf(os.Stderr, "%s already exists\n", skfile)
+		os.Exit(1)
+	}
+	if _, err := os.Stat(pkfile); err == nil {
+		fmt.Fprintf(os.Stderr, "%s already exists\n", pkfile)
+		os.Exit(1)
+	}
+
 	pk, sk, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "unable to create ed25519 keys")
+		log.Fatal(err)
 		os.Exit(1)
 	}
-	if _, err := os.Stderr.Write(sk[:]); err != nil {
-		fmt.Fprintf(os.Stderr, "unable to write secret key")
+	if err := ioutil.WriteFile(skfile, sk[:], 0600); err != nil {
+		log.Fatal(err)
 		os.Exit(1)
 	}
-	if _, err := os.Stdout.Write(PBEncode(&Profile_PublicKey{Ed25519: pk[:]})); err != nil {
-		fmt.Fprintf(os.Stderr, "unable to write public key")
+
+	data := PBEncode(&Profile_PublicKey{Ed25519: pk[:]})
+	if err := ioutil.WriteFile(pkfile, data, 0644); err != nil {
+		log.Fatal(err)
 		os.Exit(1)
 	}
 }
