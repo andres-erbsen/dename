@@ -223,16 +223,16 @@ up an independent server.
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 
-		[freshness]
-		Threshold = 60s
-		NumConfirmations = 1
-		[server "dename.mit.edu:6263"]
+		[verifier "dename@mit.edu"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
-		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
-		[server "your-server:6263"]
+		[verifier "my-verifier"]
 		PublicKey = # run `base64 /home/dename/keys/public_key` and copy here
+
+		[lookup "my-verifier-address:port"]
 		TransportPublicKey = # run `base64 /home/dename/keys/transport_public_key` and copy here
-		ReadOnly = true
+		
+		[update "dename.mit.edu:6263"]
+		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
 
 5. (or if you get stuck) Email [dename@mit.edu](mailto:dename.mit.edu) and let
    us know how it went, and whether you'd like to have your server added to a

@@ -23,19 +23,64 @@ import (
 	"time"
 )
 
+type Consensus struct {
+	SignaturesRequired int
+}
+
+type Freshness struct {
+	SignaturesRequired int
+	Threshold          string
+}
+
+type Verifier struct {
+	PublicKey string
+}
+
 type Server struct {
-	PublicKey          string
 	Timeout            string
 	TransportPublicKey string
-	ReadOnly           bool
 }
-type Freshness struct {
-	Threshold        string
-	NumConfirmations int
-}
+
 type Config struct {
-	Freshness Freshness
-	Server    map[string]*Server
+	Consensus
+	Freshness
+	Verifier map[string]*Verifier
+	Update   map[string]*Server
+	Lookup   map[string]*Server
+}
+
+func parseServer(address string, scfg *Server) (*server, error) {
+	ret := &server{address: address}
+	timeout := DefaultTimeout
+	if scfg.Timeout != "" {
+		timeout = scfg.Timeout
+	}
+	var err error
+	ret.timeout, err = time.ParseDuration(timeout)
+	if err != nil {
+		return nil, err
+	}
+	transportPkData, err := base64.StdEncoding.DecodeString(scfg.TransportPublicKey)
+	if err != nil {
+		return nil, err
+	}
+	if len(transportPkData) != 32 {
+		return nil, fmt.Errorf("malformed transport public key for server \"%s\" (expected %d bytes, got %d)", address, 32, len(transportPkData))
+	}
+	copy(ret.transportPK[:], transportPkData)
+	return ret, nil
+}
+
+func parseServers(servers map[string]*Server) ([]*server, error) {
+	ret := make([]*server, 0, len(servers))
+	for a, s := range servers {
+		u, err := parseServer(a, s)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, u)
+	}
+	return ret, nil
 }
 
 func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Client, err error) {
@@ -43,18 +88,9 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		cfg = &DefaultConfig
 	}
 	c = new(Client)
-	c.freshnessThreshold, err = time.ParseDuration(cfg.Freshness.Threshold)
-	if err != nil {
-		return nil, err
-	}
-	if now == nil {
-		now = time.Now
-	}
-	c.now = now
-	c.freshnessNumConfirmations = cfg.Freshness.NumConfirmations
-	c.servers = make(map[uint64]*serverInfo)
-	for address, server := range cfg.Server {
-		pkData, err := base64.StdEncoding.DecodeString(server.PublicKey)
+	c.verifier = make(map[uint64]*verifier, len(cfg.Verifier))
+	for name, verifierCfg := range cfg.Verifier {
+		pkData, err := base64.StdEncoding.DecodeString(verifierCfg.PublicKey)
 		if err != nil {
 			return nil, err
 		}
@@ -62,31 +98,41 @@ func NewClient(cfg *Config, dialer proxy.Dialer, now func() time.Time) (c *Clien
 		if err = proto.Unmarshal(pkData, pk); err != nil {
 			return nil, err
 		}
-		if server.Timeout == "" {
-			server.Timeout = DefaultTimeout
-		}
-		timeout, err := time.ParseDuration(server.Timeout)
-		if err != nil {
-			return nil, err
-		}
-		var transportPK *[32]byte
-		if server.TransportPublicKey != "" {
-			transportPkData, err := base64.StdEncoding.DecodeString(server.TransportPublicKey)
-			if err != nil {
-				return nil, err
-			}
-			if len(transportPkData) != 32 {
-				return nil, fmt.Errorf("malformed transport public key for server \"%s\" (expected %d bytes, got %d)", address, 32, len(transportPkData))
-			}
-			transportPK := new([32]byte)
-			copy(transportPK[:], transportPkData)
-		}
-		c.servers[pk.ID()] = &serverInfo{pk: pk, address: address, timeout: timeout, transportPK: transportPK, readOnly: server.ReadOnly}
+		c.verifier[pk.ID()] = &verifier{name: name, pk: pk}
 	}
-	c.consensusNumConfirmations = len(cfg.Server)
+
+	if c.update, err = parseServers(cfg.Update); err != nil {
+		return nil, err
+	}
+	if c.lookup, err = parseServers(cfg.Lookup); err != nil {
+		return nil, err
+	}
+
+	if cfg.Consensus.SignaturesRequired != 0 {
+		c.consensusSignaturesRequired = cfg.Consensus.SignaturesRequired
+	} else {
+		c.consensusSignaturesRequired = len(cfg.Verifier)
+	}
+	if cfg.Freshness.SignaturesRequired != 0 {
+		c.freshnessSignaturesRequired = cfg.Freshness.SignaturesRequired
+	} else {
+		c.freshnessSignaturesRequired = len(cfg.Verifier)
+	}
+	freshnessThreshold := DefaultFreshnessThreshold
+	if cfg.Freshness.Threshold != "" {
+		freshnessThreshold = cfg.Freshness.Threshold
+	}
+	c.freshnessThreshold, err = time.ParseDuration(freshnessThreshold)
+	if err != nil {
+		return nil, err
+	}
 	if dialer == nil {
 		dialer = DefaultDialer
 	}
 	c.dialer = dialer
+	if now == nil {
+		now = time.Now
+	}
+	c.now = now
 	return c, nil
 }
