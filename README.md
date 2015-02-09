@@ -223,7 +223,7 @@ up an independent server.
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 
-		[verifier "dename@mit.edu"]
+		[verifier "mit-pilot"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
 		[verifier "my-verifier"]
 		PublicKey = # run `base64 /home/dename/keys/public_key` and copy here
