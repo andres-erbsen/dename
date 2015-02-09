@@ -193,9 +193,10 @@ rough idea on how to set up an independent server.
 
 1. Add yourself to
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
-2. Clone this repository and run the following command to build the server
+2. Download and build the code:
 
-		cd server/server && go build -v; cd ../..
+		go get -u -d github.com/andres-erbsen/{dename/server/server,chatterbox/transport}
+		cd $GOPATH/src/github.com/andres-erbsen/dename/server/server && go build -v; cd ../..
 
 3. Configure the server
 
