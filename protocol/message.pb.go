@@ -27,12 +27,6 @@ import io "io"
 import fmt "fmt"
 import github_com_gogo_protobuf_proto "github.com/gogo/protobuf/proto"
 
-import github_com_gogo_protobuf_proto1 "github.com/gogo/protobuf/proto"
-
-import github_com_gogo_protobuf_proto2 "github.com/gogo/protobuf/proto"
-
-import github_com_gogo_protobuf_proto3 "github.com/gogo/protobuf/proto"
-
 import bytes "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -700,7 +694,7 @@ func (m *Profile_PublicKey) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Ed25519 = append(m.Ed25519, data[index:postIndex]...)
+			m.Ed25519 = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		default:
 			var sizeOfWire int
@@ -764,7 +758,7 @@ func (m *SignedProfileOperation) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ProfileOperation = append(m.ProfileOperation, data[index:postIndex]...)
+			m.ProfileOperation = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 2:
 			if wireType != 2 {
@@ -786,7 +780,7 @@ func (m *SignedProfileOperation) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NewProfileSignature = append(m.NewProfileSignature, data[index:postIndex]...)
+			m.NewProfileSignature = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 3:
 			if wireType != 2 {
@@ -808,7 +802,7 @@ func (m *SignedProfileOperation) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.OldProfileSignature = append(m.OldProfileSignature, data[index:postIndex]...)
+			m.OldProfileSignature = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		default:
 			var sizeOfWire int
@@ -872,7 +866,7 @@ func (m *SignedProfileOperation_ProfileOperationT) Unmarshal(data []byte) error 
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = append(m.Name, data[index:postIndex]...)
+			m.Name = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 2:
 			if wireType != 2 {
@@ -894,7 +888,7 @@ func (m *SignedProfileOperation_ProfileOperationT) Unmarshal(data []byte) error 
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.NewProfile = append(m.NewProfile, data[index:postIndex]...)
+			m.NewProfile = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		default:
 			var sizeOfWire int
@@ -958,7 +952,7 @@ func (m *SignedServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Message = append(m.Message, data[index:postIndex]...)
+			m.Message = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 2:
 			if wireType != 2 {
@@ -980,7 +974,7 @@ func (m *SignedServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Signature = append(m.Signature, data[index:postIndex]...)
+			m.Signature = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		default:
 			var sizeOfWire int
@@ -1044,7 +1038,7 @@ func (m *SignedServerMessage_ServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HashOfOperations = append(m.HashOfOperations, data[index:postIndex]...)
+			m.HashOfOperations = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1066,7 +1060,7 @@ func (m *SignedServerMessage_ServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HashOfHashes = append(m.HashOfHashes, data[index:postIndex]...)
+			m.HashOfHashes = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1088,7 +1082,7 @@ func (m *SignedServerMessage_ServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Operations = append(m.Operations, data[index:postIndex]...)
+			m.Operations = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 4:
 			if wireType != 2 {
@@ -1110,7 +1104,7 @@ func (m *SignedServerMessage_ServerMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HashOfState = append(m.HashOfState, data[index:postIndex]...)
+			m.HashOfState = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 10:
 			if wireType != 0 {
@@ -1225,7 +1219,7 @@ func (m *SignedServerMessage_ServerMessage_OperationsT) Unmarshal(data []byte) e
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Seed = append(m.Seed, data[index:postIndex]...)
+			m.Seed = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 2:
 			if wireType != 0 {
@@ -1620,7 +1614,7 @@ func (m *ClientMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ResolveName = append(m.ResolveName, data[index:postIndex]...)
+			m.ResolveName = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1669,7 +1663,7 @@ func (m *ClientMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.InviteCode = append(m.InviteCode, data[index:postIndex]...)
+			m.InviteCode = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 11:
 			if wireType != 0 {
@@ -1872,7 +1866,7 @@ func (m *ClientReply_MerklemapNode) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Substring = append(m.Substring, data[index:postIndex]...)
+			m.Substring = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 3:
 			if wireType != 2 {
@@ -1894,7 +1888,7 @@ func (m *ClientReply_MerklemapNode) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LeftChildHash = append(m.LeftChildHash, data[index:postIndex]...)
+			m.LeftChildHash = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 4:
 			if wireType != 2 {
@@ -1916,7 +1910,7 @@ func (m *ClientReply_MerklemapNode) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RightChildHash = append(m.RightChildHash, data[index:postIndex]...)
+			m.RightChildHash = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		case 5:
 			if wireType != 2 {
@@ -1938,7 +1932,7 @@ func (m *ClientReply_MerklemapNode) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Value = append(m.Value, data[index:postIndex]...)
+			m.Value = append([]byte{}, data[index:postIndex]...)
 			index = postIndex
 		default:
 			var sizeOfWire int
@@ -1977,13 +1971,14 @@ func (m *Profile) Size() (n int) {
 		n += 1 + sovMessage(uint64(*m.Version))
 	}
 	if m.XXX_extensions != nil {
-		n += github_com_gogo_protobuf_proto1.SizeOfExtensionMap(m.XXX_extensions)
+		n += github_com_gogo_protobuf_proto.SizeOfExtensionMap(m.XXX_extensions)
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
+
 func (m *Profile_PublicKey) Size() (n int) {
 	var l int
 	_ = l
@@ -1996,6 +1991,7 @@ func (m *Profile_PublicKey) Size() (n int) {
 	}
 	return n
 }
+
 func (m *SignedProfileOperation) Size() (n int) {
 	var l int
 	_ = l
@@ -2016,6 +2012,7 @@ func (m *SignedProfileOperation) Size() (n int) {
 	}
 	return n
 }
+
 func (m *SignedProfileOperation_ProfileOperationT) Size() (n int) {
 	var l int
 	_ = l
@@ -2032,6 +2029,7 @@ func (m *SignedProfileOperation_ProfileOperationT) Size() (n int) {
 	}
 	return n
 }
+
 func (m *SignedServerMessage) Size() (n int) {
 	var l int
 	_ = l
@@ -2048,6 +2046,7 @@ func (m *SignedServerMessage) Size() (n int) {
 	}
 	return n
 }
+
 func (m *SignedServerMessage_ServerMessage) Size() (n int) {
 	var l int
 	_ = l
@@ -2081,6 +2080,7 @@ func (m *SignedServerMessage_ServerMessage) Size() (n int) {
 	}
 	return n
 }
+
 func (m *SignedServerMessage_ServerMessage_OperationsT) Size() (n int) {
 	var l int
 	_ = l
@@ -2102,6 +2102,7 @@ func (m *SignedServerMessage_ServerMessage_OperationsT) Size() (n int) {
 	}
 	return n
 }
+
 func (m *BackendMessage) Size() (n int) {
 	var l int
 	_ = l
@@ -2121,6 +2122,7 @@ func (m *BackendMessage) Size() (n int) {
 	}
 	return n
 }
+
 func (m *BackendMessage_MessageID) Size() (n int) {
 	var l int
 	_ = l
@@ -2146,6 +2148,7 @@ func (m *BackendMessage_MessageID) Size() (n int) {
 	}
 	return n
 }
+
 func (m *ClientMessage) Size() (n int) {
 	var l int
 	_ = l
@@ -2172,6 +2175,7 @@ func (m *ClientMessage) Size() (n int) {
 	}
 	return n
 }
+
 func (m *ClientReply) Size() (n int) {
 	var l int
 	_ = l
@@ -2195,6 +2199,7 @@ func (m *ClientReply) Size() (n int) {
 	}
 	return n
 }
+
 func (m *ClientReply_MerklemapNode) Size() (n int) {
 	var l int
 	_ = l
@@ -2254,7 +2259,7 @@ func NewPopulatedProfile(r randyMessage, easy bool) *Profile {
 				wire = 5
 			}
 			data := randFieldMessage(nil, r, fieldNumber, wire)
-			github_com_gogo_protobuf_proto2.SetRawExtension(this, int32(fieldNumber), data)
+			github_com_gogo_protobuf_proto.SetRawExtension(this, int32(fieldNumber), data)
 		}
 	}
 	return this
@@ -2547,11 +2552,7 @@ type randyMessage interface {
 }
 
 func randUTF8RuneMessage(r randyMessage) rune {
-	res := rune(r.Uint32() % 1112064)
-	if 55296 <= res {
-		res += 2047
-	}
-	return res
+	return rune(r.Intn(126-43) + 43)
 }
 func randStringMessage(r randyMessage) string {
 	v37 := r.Intn(100)
@@ -2643,7 +2644,7 @@ func (m *Profile) MarshalTo(data []byte) (n int, err error) {
 		i = encodeVarintMessage(data, i, uint64(*m.Version))
 	}
 	if len(m.XXX_extensions) > 0 {
-		n, err := github_com_gogo_protobuf_proto3.EncodeExtensionMap(m.XXX_extensions, data[i:])
+		n, err := github_com_gogo_protobuf_proto.EncodeExtensionMap(m.XXX_extensions, data[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -2654,6 +2655,7 @@ func (m *Profile) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *Profile_PublicKey) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2680,6 +2682,7 @@ func (m *Profile_PublicKey) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *SignedProfileOperation) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2718,6 +2721,7 @@ func (m *SignedProfileOperation) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *SignedProfileOperation_ProfileOperationT) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2750,6 +2754,7 @@ func (m *SignedProfileOperation_ProfileOperationT) MarshalTo(data []byte) (n int
 	}
 	return i, nil
 }
+
 func (m *SignedServerMessage) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2782,6 +2787,7 @@ func (m *SignedServerMessage) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *SignedServerMessage_ServerMessage) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2841,6 +2847,7 @@ func (m *SignedServerMessage_ServerMessage) MarshalTo(data []byte) (n int, err e
 	}
 	return i, nil
 }
+
 func (m *SignedServerMessage_ServerMessage_OperationsT) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2884,6 +2891,7 @@ func (m *SignedServerMessage_ServerMessage_OperationsT) MarshalTo(data []byte) (
 	}
 	return i, nil
 }
+
 func (m *BackendMessage) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2934,6 +2942,7 @@ func (m *BackendMessage) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *BackendMessage_MessageID) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -2993,6 +3002,7 @@ func (m *BackendMessage_MessageID) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *ClientMessage) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -3050,6 +3060,7 @@ func (m *ClientMessage) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *ClientReply) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -3099,6 +3110,7 @@ func (m *ClientReply) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func (m *ClientReply_MerklemapNode) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -3148,6 +3160,7 @@ func (m *ClientReply_MerklemapNode) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+
 func encodeFixed64Message(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
