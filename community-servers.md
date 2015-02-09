@@ -1,6 +1,6 @@
 # Community-run `dename` servers
 
-### `dename.mit.edu`
+### `mit-pilot`
 
 The pilot server, run by the people who started the project.  Used by default
 when no configuration file is provided. Should probably accept signatures from
@@ -12,7 +12,7 @@ Currently the only server that can handle updates.
 - Contact: PGP: `CFCA 4540 99B1 6042 F832 A708 4A33 C134 D6C4 7A84`, `dename`: `andres`
 - Config entries:
 
-		[verifier "pilot"]
+		[verifier "mit-pilot"]
 		PublicKey = CiCheFqDmJ0Pg+j+lypkmmiHrFmRn50rlDi5X0l4+lJRFA==
 		[update "dename.mit.edu:6263"]
 		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
