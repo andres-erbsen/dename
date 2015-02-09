@@ -27,12 +27,12 @@ func usageAndExit(str string) {
 	if str != "" {
 		fmt.Fprintf(os.Stderr, "%s\n", str)
 	}
-	fmt.Fprintf(os.Stderr,"usage:" +
-		"\t%s init <name> <invite>         # create a new profile\n" +
+	fmt.Fprintf(os.Stderr, "usage:"+
+		"\t%s init <name> <invite>         # create a new profile\n"+
 		"\t%s set  <name> <field>  [value] # set the value for a field\n"+
-		"\t\t                             If the value is empty, stdin will be used. Possible\n" +
-		"\t\t                             fields are: bitcoin, dename, dename-transport, dns,\n" +
-		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n" +
+		"\t\t                             If the value is empty, stdin will be used. Possible\n"+
+		"\t\t                             fields are: bitcoin, dename, dename-transport, dns,\n"+
+		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n"+
 		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n",
 		os.Args[0], os.Args[0])
 
@@ -57,7 +57,7 @@ func main() {
 		}
 		profile, sk, err := client.NewProfile(nil, nil)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "creating a new profile failed: %s\n", err);
+			fmt.Fprintf(os.Stderr, "creating a new profile failed: %s\n", err)
 			os.Exit(1)
 		}
 		if err := dnmgr.Register(sk, profile, name, invite, "", nil); err != nil {
@@ -65,6 +65,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "set":
+
 		var name, fieldName string
 		var value []byte
 		if len(args) == 2 || len(args) == 3 {
@@ -75,6 +76,14 @@ func main() {
 		} else {
 			usageAndExit("")
 		}
+		// validate arguments
+		if _, _, err := dnmgr.LoadLocalProfile(name, ""); err != nil {
+			usageAndExit("profile not found for name:  " + name)
+		}
+		fieldNumber, err := client.FieldByName(fieldName)
+		if err != nil {
+			usageAndExit("unknown field: " + fieldName)
+		}
 		if value == nil {
 			var err error
 			value, err = ioutil.ReadAll(os.Stdin)
@@ -82,10 +91,6 @@ func main() {
 				fmt.Fprintf(os.Stderr, "failed to read input: %s\n", err)
 				os.Exit(1)
 			}
-		}
-		fieldNumber, err := client.FieldByName(fieldName)
-		if err != nil {
-			usageAndExit("unknown field")
 		}
 		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
