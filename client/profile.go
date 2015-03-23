@@ -17,11 +17,13 @@ package client
 import (
 	"crypto/rand"
 	"fmt"
+	"io"
+	"sync"
+	"time"
+
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/protocol"
 	"github.com/gogo/protobuf/proto"
-	"io"
-	"time"
 )
 
 var fieldByName = map[string]int32{
@@ -52,15 +54,21 @@ func FieldByName(fieldName string) (fieldNumber int32, err error) {
 	return
 }
 
-func profileField(field int32) (ret *proto.ExtensionDesc) {
-	ret = &proto.ExtensionDesc{(*Profile)(nil), ([]byte)(nil),
+var profileFieldDescr = map[int32]*proto.ExtensionDesc{}
+var profileFieldDescrMu sync.Mutex
+
+func profileField(field int32) *proto.ExtensionDesc {
+	profileFieldDescrMu.Lock()
+	defer profileFieldDescrMu.Unlock()
+	if descr, ok := profileFieldDescr[field]; ok {
+		return descr
+	}
+	descr := &proto.ExtensionDesc{(*Profile)(nil), ([]byte)(nil),
 		field, fmt.Sprint(field), "bytes," + fmt.Sprint(field) + ",opt",
 	}
-	func() {
-		defer func() { recover() }() // panic if already registered
-		proto.RegisterExtension(ret)
-	}()
-	return
+	proto.RegisterExtension(descr)
+	profileFieldDescr[field] = descr
+	return descr
 }
 
 func GetProfileField(profile *Profile, field int32) ([]byte, error) {
