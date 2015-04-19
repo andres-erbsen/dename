@@ -33,8 +33,9 @@ func usageAndExit(str string) {
 		"\t\t                             If the value is empty, stdin will be used. Possible\n"+
 		"\t\t                             fields are: bitcoin, dename, dename-transport, dns,\n"+
 		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n"+
-		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n",
-		os.Args[0], os.Args[0])
+		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n"+
+		"\t%s update <name>                # updates the expiration time of the profile\n",
+		os.Args[0], os.Args[0], os.Args[0])
 
 	os.Exit(1)
 }
@@ -93,6 +94,20 @@ func main() {
 			}
 		}
 		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
+			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
+			os.Exit(1)
+		}
+	case "update":
+		var name string
+		if len(args) == 1 {
+			name = args[0]
+		} else {
+			usageAndExit("")
+		}
+		if _, _, err := dnmgr.LoadLocalProfile(name, ""); err != nil {
+			usageAndExit("profile not found for name:  " + name)
+		}
+		if err := dnmgr.IncreaseExpirationTime(name, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
 			os.Exit(1)
 		}
