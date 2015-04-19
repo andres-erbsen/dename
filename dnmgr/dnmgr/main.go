@@ -33,8 +33,10 @@ func usageAndExit(str string) {
 		"\t\t                             If the value is empty, stdin will be used. Possible\n"+
 		"\t\t                             fields are: bitcoin, dename, dename-transport, dns,\n"+
 		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n"+
-		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n",
-		os.Args[0], os.Args[0])
+		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n"+
+		"\t%s unset <name> <field>         # unset a field\n"+
+		"\t\t                             The possible fields are the same as for the set command\n",
+		os.Args[0], os.Args[0], os.Args[0])
 
 	os.Exit(1)
 }
@@ -65,7 +67,6 @@ func main() {
 			os.Exit(1)
 		}
 	case "set":
-
 		var name, fieldName string
 		var value []byte
 		if len(args) == 2 || len(args) == 3 {
@@ -93,6 +94,24 @@ func main() {
 			}
 		}
 		if err := dnmgr.SetProfileField(name, fieldNumber, value, "", nil); err != nil {
+			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
+			os.Exit(1)
+		}
+	case "unset":
+		var name, fieldName string
+		if len(args) == 2 {
+			name, fieldName = args[0], args[1]
+		} else {
+			usageAndExit("")
+		}
+		if _, _, err := dnmgr.LoadLocalProfile(name, ""); err != nil {
+			usageAndExit("profile not found for name:  " + name)
+		}
+		fieldNumber, err := client.FieldByName(fieldName)
+		if err != nil {
+			usageAndExit("unknown field: " + fieldName)
+		}
+		if err := dnmgr.ClearProfileField(name, fieldNumber, "", nil); err != nil {
 			fmt.Fprintf(os.Stderr, "operation failed: %s\n", err)
 			os.Exit(1)
 		}

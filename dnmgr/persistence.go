@@ -164,3 +164,37 @@ func SetProfileField(name string, field int32, value []byte, configDir string, c
 	}
 	return ioutil.WriteFile(filepath.Join(configDir, filename(name), "profile"), PBEncode(profile), 0600)
 }
+
+// ClearProfileField downloads the profile for name, clears the given field
+// and uses sk to remap the name to the old profile. The local copy of the
+// profile is ignored and overwritten. The version number is incremented by one
+// and the expiration time is set to 364 days into the future if it is earlier.
+func ClearProfileField(name string, field int32, configDir string, client *dnmc.Client) error {
+	configDir, client, err := dirAndClient(configDir, client)
+	if err != nil {
+		return fmt.Errorf("failed to load config file: %v", err)
+	}
+	sk, _, err := LoadLocalProfile(name, configDir)
+	if err != nil {
+		return err
+	}
+	profile, err := client.Lookup(name)
+	if err != nil && !dnmc.IsErrOutOfDate(err) {
+		return err
+	}
+
+	version := profile.GetVersion()
+	profile.Version = new(uint64)
+	*profile.Version = version + 1
+	expire := uint64(time.Now().Add(MAX_VALIDITY_PERIOD*time.Second - 24*time.Hour).Unix())
+	if profile.GetExpirationTime() < expire {
+		profile.ExpirationTime = &expire
+	}
+
+	dnmc.ClearProfileField(profile, field)
+	if err := client.Modify(sk, name, profile); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(configDir, filename(name), "profile"), PBEncode(profile), 0600)
+}
+
