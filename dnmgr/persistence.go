@@ -164,3 +164,30 @@ func SetProfileField(name string, field int32, value []byte, configDir string, c
 	}
 	return ioutil.WriteFile(filepath.Join(configDir, filename(name), "profile"), PBEncode(profile), 0600)
 }
+
+func IncreaseExpirationTime(name string, configDir string, client *dnmc.Client) error {
+	configDir, client, err := dirAndClient(configDir, client)
+	if err != nil {
+		return fmt.Errorf("failed to load config file: %v", err)
+	}
+	sk, _, err := LoadLocalProfile(name, configDir)
+	if err != nil {
+		return err
+	}
+	profile, err := client.Lookup(name)
+	if err != nil && !dnmc.IsErrOutOfDate(err) {
+		return err
+	}
+	version := profile.GetVersion()
+	profile.Version = new(uint64)
+	*profile.Version = version + 1
+
+	expire := uint64(time.Now().Add(MAX_VALIDITY_PERIOD*time.Second - 24*time.Hour).Unix())
+	if profile.GetExpirationTime() < expire {
+		profile.ExpirationTime = &expire
+	}
+	if err := client.Modify(sk, name, profile); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(configDir, filename(name), "profile"), PBEncode(profile), 0600)
+}
