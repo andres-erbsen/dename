@@ -19,7 +19,6 @@ Currently the only server that can handle updates.
 		[lookup "dename.mit.edu:6263"]
 		TransportPublicKey = 4f2i+j65JCE2xNKhxE3RPurAYALx9GRy0Pm9c6J7eDY=
 
-
 ### `dename.alokat.org`
 
 - Accepts signatures: `dename.mit.edu`
@@ -31,3 +30,18 @@ Currently the only server that can handle updates.
 		PublicKey = CiD6CFKBpG54dG3OMx6PJ58z5rlNFK24Dx2HMpR7urHIVA==
 		[lookup "dename.alokat.org:6263"]
 		TransportPublicKey = IoEJsVcspYNiuymi+JMpfkL1usDy482qE8V4aGvKrkY=
+
+### `dename02.alokat.org`
+
+This server has a dynamic ip, but will be updated as soon as the ip changes. 
+
+- Accepts signatures: `dename.mit.edu`
+- Requires signatures: `dename.mit.edu`
+- Contact: PGP: `4981 E0FD 7206 B64A 0384 7B1A 1E1D 9C86 A5BE 1A64`, `dename`: `fritjof`
+- Config entries:
+
+		[verifier "alokat-02"]
+		PublicKey = CiDCighTMdpZtTDNyKNSQ94Y7vtzEDATDsWCBH1kK7wF4Q==
+		[lookup "dename02.alokat.org:6263"]
+		TransportPublicKey = 1gTqwbutP0yG6yL+1mAXK+sCMRaBeNqbuKgTVIkDgDY=
+
