@@ -71,6 +71,12 @@ func Register(sk *[64]byte, profile *Profile, name string, invite []byte, config
 	if err = ioutil.WriteFile(filepath.Join(path, "sk"), sk[:], 0600); err != nil {
 		return err
 	}
+	profileAlready, err := client.Lookup(name)
+	if err != nil && !dnmc.IsErrOutOfDate(err) {
+		return fmt.Errorf("lookup failed: %s\n", err)
+	} else if profileAlready != nil && !dnmc.IsErrOutOfDate(err) {
+		return fmt.Errorf("name already used")
+	}
 	// TODO: provide an API for setting fields
 	err = client.Register(sk, name, profile, invite)
 	if err != nil {
