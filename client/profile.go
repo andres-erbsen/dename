@@ -83,6 +83,10 @@ func SetProfileField(profile *Profile, field int32, value []byte) error {
 	return proto.SetExtension(profile, profileField(field), value)
 }
 
+func ClearProfileField(profile *Profile, field int32) {
+	proto.ClearExtension(profile, profileField(field))
+}
+
 func NewProfile(rnd io.Reader, expirationTime *time.Time) (profile *Profile,
 	sk *[ed25519.PrivateKeySize]byte, err error) {
 	if rnd == nil {
