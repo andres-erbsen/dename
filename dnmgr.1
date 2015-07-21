@@ -1,0 +1,97 @@
+.\"
+.\"Copyright 2015 Fritjof Bornebusch <fritjof@alokat.org>
+.\"
+.\"Licensed under the Apache License, Version 2.0 (the "License"); you may not
+.\"use this file except in compliance with the License.
+.\"
+.\"You may obtain a copy of the License at
+.\"
+.\"http://www.apache.org/licenses/LICENSE-2.0
+.\"
+.\"Unless required by applicable law or agreed to in writing, software distributed
+.\"under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+.\"CONDITIONS OF ANY KIND, either express or implied. See the License for the
+.\"specific language governing permissions and limitations under the License.
+.Dd $Mdocdate: July 21 2015 $
+.Dt DMNGR 1
+.Os
+.Sh NAME
+.Nm dmngr
+.Nd initialize, update and unset dename profile
+.Sh SYNOPSIS
+.Nm dnmgr
+init <name> <invite token>
+.Nm dnmgr
+set <name> <field>
+.Op value
+.Nm dnmgr
+unset <name> <field>
+.Nm dnmgr
+update <name>
+.Sh DESCRIPTION
+The
+.Nm
+utility initializes a new profile or sets different fields of it. Each field can
+be set or unset. The supported fields are the following:
+.Bl -tag -width Dsssignature
+.It bitcoin
+Sets the bitcoin id of a user.
+.It dename
+Sets the dename server signature from Profile.PublicKey in base64.
+.It dename-transport
+Sets the dename Curve25519 public key in base64.
+.It dns
+Sets the domain name.
+.It email
+Sets the email address.
+.It gpg
+Sets the gpg fingerprint.
+.It http
+Sets the web address, ether with http:// or with https:// as prefix.
+.It jabber
+Sets the jabber account.
+.It opengpg
+Same as gpg but overrides the previously stored value..
+.It otr
+Sets the off-the-record fingerprint.
+.aIt gpg
+Same as gpg but overrides the previously stored value.
+.It ssh
+Sets authorized keys for ssh communication.
+.It ssh-host
+Sets the known ssh hosts.
+.It textsecure
+Sets the fingerprint of a textsecure user.
+.It tor
+Sets the fingerprint of a tor node.
+.It web
+Same as http and overrides it.
+.It xmpp
+Same as jabber but overrides the previously stored value.
+.Sh Exit Status
+.Ex -std dnmgr
+It may fail because of the following reasons:
+.Pp
+.Bl -bullet -compact
+.It
+Entered an invalid invite.
+.It
+Entered unknown field.
+.It
+Chosen profile name was already registered.
+.It
+Profile was not previously generated before changing fields.
+.It
+The new time after updating the profile was not successfull.
+.It
+To less arguments for the different commands.
+.El
+.Sh Examples
+Create a new profile for Bob:
+.Dl $ dnmgr bob invite Tk7+zzGZFw+u0/FruGs/yQ==
+.Pp
+Authorize Alice to control the current machine using ssh:
+.Dl $ dnmlookup alice ssh | tee -a ~/.ssh/authorized_keys
+.Ed
+.Sh SEE ALSO
+.Xr dnmlookup 1
