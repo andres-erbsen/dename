@@ -35,9 +35,9 @@ func usageAndExit(str string) {
 		"\t\t                             email, gpg, http, jabber, openpgp, otr, pgp, ssh,\n"+
 		"\t\t                             ssh-host, textsecure, tor, web, or xmpp.\n"+
 		"\t%s unset <name> <field>         # unset a field\n"+
-		"\t\t                             The possible fields are the same as for the set command\n",
+		"\t\t                             The possible fields are the same as for the set command\n"+
 		"\t%s update <name>                # updates the expiration time of the profile\n",
-		os.Args[0], os.Args[0], os.Args[0])
+		os.Args[0], os.Args[0], os.Args[0], os.Args[0])
 
 	os.Exit(1)
 }
