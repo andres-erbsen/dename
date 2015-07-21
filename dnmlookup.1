@@ -13,26 +13,19 @@
 .\"CONDITIONS OF ANY KIND, either express or implied. See the License for the
 .\"specific language governing permissions and limitations under the License.
 .Dd $Mdocdate: July 21 2015 $
-.Dt DMNGR 1
+.Dt DNMLOOKUP 1
 .Os
 .Sh NAME
-.Nm dmngr
-.Nd initialize, update and unset dename profiles
+.Nm dnmlookup
+.Nd look up for dename profile fields
 .Sh SYNOPSIS
-.Nm dnmgr
-init <name> <invite token>
-.Nm dnmgr
-set <name> <field>
-.Op value
-.Nm dnmgr
-unset <name> <field>
-.Nm dnmgr
-update <name>
+.Nm dnmlookup
+<name> <field>
 .Sh DESCRIPTION
 The
 .Nm
-utility initializes a new profile or sets different fields of it. Each field can
-be set or unset. The supported fields are the following:
+utility looks up for different fields of a given profile. The supported fields
+are the following:
 .Bl -tag -width Dsssignature
 .It bitcoin
 Sets the bitcoin id of a user.
@@ -69,29 +62,22 @@ Same as http and overrides it.
 .It xmpp
 Same as jabber but overrides the previously stored value.
 .Sh EXIT STATUS
-.Ex -std dnmgr
+.Ex -std dnmlookup
 It may fail because of the following reasons:
 .Pp
 .Bl -bullet -compact
-.It
-Entered an invalid invite.
 .It
 Entered unknown field.
 .It
 Chosen profile name was already registered.
 .It
-Profile was not previously generated before changing fields.
-.It
-The new time after updating the profile was not successfull.
-.It
 To less arguments for the different commands.
+.It
+The chosen profile is already deleted. 
 .El
 .Sh EXAMPLES
-Create a new profile for Bob:
-.Dl $ dnmgr bob invite Tk7+zzGZFw+u0/FruGs/yQ==
-.Pp
-Authorize Alice to control the current machine using ssh:
-.Dl $ dnmlookup alice ssh | tee -a ~/.ssh/authorized_keys
+Look up for Alice gpg key:
+.Dl $ dnmlookup alice pgp
 .Ed
 .Sh SEE ALSO
-.Xr dnmlookup 1
+.Xr dnmgr 1
