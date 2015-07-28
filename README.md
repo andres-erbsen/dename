@@ -238,6 +238,8 @@ rough idea on how to set up an independent server.
    us know how it went, and whether you'd like to have your server added to a
    public list of [community servers](community-servers.md).
 
+   Four people interested about `dename` OpenSMTPD are encouraged to join our irc channel: #dename @ irc.freenode.net
+
 [OpenPGP]: https://andreser.scripts.mit.edu/blog/2013-08-10-how-to-use-openpgp-for-email-in-1000-words/
 [`ssh` host key]: http://www.rackspace.com/knowledge_center/article/rackspace-cloud-essentials-checking-a-server%E2%80%99s-ssh-host-fingerprint-with-the-web-console#Explaining
 [`signify`]: http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1
