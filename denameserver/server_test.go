@@ -12,7 +12,7 @@
 // License for the specific language governing permissions and limitations under
 // the License.
 
-package server
+package denameserver
 
 import (
 	"bytes"
@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"github.com/agl/ed25519"
 	. "github.com/andres-erbsen/dename/client"
+	"github.com/andres-erbsen/dename/denameserver/testutil"
 	. "github.com/andres-erbsen/dename/protocol"
-	"github.com/andres-erbsen/dename/server/testutil"
 	"github.com/gogo/protobuf/proto"
 	"io/ioutil"
 	mathrand "math/rand"

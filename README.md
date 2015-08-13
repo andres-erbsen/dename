@@ -195,8 +195,8 @@ rough idea on how to set up an independent server.
 [dename-servers@mit.edu](http://mailman.mit.edu/mailman/listinfo/dename-servers).
 2. Download and build the code:
 
-		go get -u -d github.com/andres-erbsen/{dename/server/server,chatterbox/transport}
-		cd $GOPATH/src/github.com/andres-erbsen/dename/server/server && go build -v; cd ../..
+		go get -u -d github.com/andres-erbsen/{dename/denameserver/denameserver,chatterbox/transport}
+		cd $GOPATH/src/github.com/andres-erbsen/dename/denameserver/denameserver && go build -v; cd ../..
 
 3. Configure the server
 
@@ -219,7 +219,7 @@ rough idea on how to set up an independent server.
 		[server "127.0.0.1:8877"]
 		PublicKey = # run `base64 /home/dename/keys/public_key` and copy here
 
-	Run it: `./server/server/server /home/dename/denameserver.cfg`
+	Run it: `./denameserver/denameserver/server /home/dename/denameserver.cfg`
 
 4. Configure your client to talk to your server. Into `~/.config/dename/authorities.cfg`:
 

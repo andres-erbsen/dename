@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/andres-erbsen/dename/server"
+	"github.com/andres-erbsen/dename/denameserver"
 	"os"
 )
 
 func main() {
-	server.StartFromConfigFile(os.Args[1])
+	denameserver.StartFromConfigFile(os.Args[1])
 	select {}
 }
