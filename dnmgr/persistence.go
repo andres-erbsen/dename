@@ -15,7 +15,7 @@
 package dnmgr
 
 import (
-	"code.google.com/p/gcfg"
+	"gopkg.in/gcfg.v1"
 	"fmt"
 	dnmc "github.com/andres-erbsen/dename/client"
 	. "github.com/andres-erbsen/dename/protocol"

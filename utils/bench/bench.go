@@ -15,7 +15,7 @@
 package main
 
 import (
-	"code.google.com/p/gcfg"
+	"gopkg.in/gcfg.v1"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"

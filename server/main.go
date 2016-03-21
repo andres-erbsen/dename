@@ -15,7 +15,7 @@
 package server
 
 import (
-	"code.google.com/p/gcfg"
+	"gopkg.in/gcfg.v1"
 	"encoding/base64"
 	"fmt"
 	"github.com/agl/ed25519"

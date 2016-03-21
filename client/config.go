@@ -15,7 +15,7 @@
 package client
 
 import (
-	"code.google.com/p/go.net/proxy"
+	"golang.org/x/net/proxy"
 	"encoding/base64"
 	"fmt"
 	. "github.com/andres-erbsen/dename/protocol"

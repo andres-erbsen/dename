@@ -16,7 +16,7 @@ package client
 
 import (
 	"bytes"
-	"code.google.com/p/go.net/proxy"
+	"golang.org/x/net/proxy"
 	"fmt"
 	"github.com/agl/ed25519"
 	"github.com/andres-erbsen/chatterbox/transport"
