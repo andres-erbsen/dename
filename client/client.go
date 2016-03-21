@@ -131,7 +131,7 @@ func (c *Client) LookupFromReply(name string, reply *ClientReply) (profile *Prof
 	}
 	expirationTime := time.Unix(int64(*profile.ExpirationTime), 0)
 	if expirationTime.Before(time.Now().Add(MAX_VALIDITY_PERIOD * time.Second / 2)) {
-		return nil, fmt.Errorf("the profile is out of date and will be erased completely on %s", expirationTime)
+		return profile, errOutOfDate{fmt.Sprintf("the profile is out of date and will be erased completely on %s", expirationTime)}
 	}
 	return profile, nil
 }
